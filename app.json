@@ -1,0 +1,11 @@
+{
+  "expo": {
+    "name": "AppNLU_Schedule",
+    "slug": "AppNLU_Schedule",
+    "version": "1.0.0",
+    "assetBundlePatterns": [
+      "**/*"
+    ]
+  },
+  "name": "AppNLU_Schedule"
+}
