@@ -4,10 +4,13 @@ import { StyleSheet, Text, View } from 'react-native';
 
 export default function App() {
   return (
-    <View style={styles.container}>
-      <Text>Open up App.js to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
+    <NavigationContainer>
+    {/* <Stack.Navigator initialRouteName="Login" screenOptions={{ headerShown: false, gestureEnabled: false }}>
+    </Stack.Navigator> */}
+      <Stack.Screen name="MenuPane" component={MenuPane} options={{ gestureEnabled: false }} />
+      
+    <Toast />
+  </NavigationContainer>
   );
 }
 
