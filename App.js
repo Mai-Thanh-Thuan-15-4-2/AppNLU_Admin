@@ -1,24 +1,12 @@
-import { StatusBar } from 'expo-status-bar';
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
-
-export default function App() {
+import { NavigationContainer } from '@react-navigation/native';
+import MenuPane from './components/MenuPane';
+const App = () => {
   return (
     <NavigationContainer>
-    {/* <Stack.Navigator initialRouteName="Login" screenOptions={{ headerShown: false, gestureEnabled: false }}>
-    </Stack.Navigator> */}
-      <Stack.Screen name="MenuPane" component={MenuPane} options={{ gestureEnabled: false }} />
-      
-    <Toast />
-  </NavigationContainer>
+      <MenuPane />
+    </NavigationContainer>
   );
-}
+};
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
+export default App;
