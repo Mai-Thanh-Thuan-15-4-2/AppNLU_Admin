@@ -4,6 +4,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import User from './User';
 import Admin from './Admin';
 import Report from './Report';
+import HomeScreen from './HomeScreen';
 
 const Tab = createBottomTabNavigator();
 
@@ -34,7 +35,8 @@ const MenuPane = () => {
     >
       <Tab.Screen name="Người dùng" component={User} />
       <Tab.Screen name="Báo cáo" component={Report}/>
-      <Tab.Screen name="Admin" component={Admin}/>
+      <Tab.Screen name="Admin" component={HomeScreen}/>
+      
     </Tab.Navigator>
   );
 };
