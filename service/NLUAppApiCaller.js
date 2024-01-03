@@ -191,6 +191,27 @@ export async function addManager(username, password, name) {
     }
     return null;
 }
+
+export async function getAllReport() {
+    const urlString = "http://103.9.159.203:8001/report/getAll";
+    const token = await AsyncStorage.getItem('tokenApp');
+
+    const response = await fetch(urlString, {
+        method: "GET",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + token,
+        },
+        body: "",
+    });
+
+    if (response.ok) {
+        const responseData = await response.json();
+        return responseData.data
+    }
+    return null;
+}
+
 export async function readReport(id) {
     const urlString = "http://103.9.159.203:8001/report/read/"+id;
     const token = await AsyncStorage.getItem('tokenApp');
