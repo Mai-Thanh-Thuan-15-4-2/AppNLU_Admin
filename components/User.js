@@ -3,7 +3,7 @@ import { Text, View } from 'react-native';
 
 
 
-const Account = () => {
+const User = () => {
  
   return (
     <View style={{
@@ -15,4 +15,4 @@ const Account = () => {
   );
 };
 
-export default Account;
+export default User;
