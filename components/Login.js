@@ -62,38 +62,27 @@ export default function Login({ navigation }) {
             });
             return;
         }
-        if (student) {
-            setIsLoading(true);
-            const user = await LoginApi(username, password, student.name);
-            setIsLoading(false);
-            if (user) {
-                if (user.id) {
-                    AsyncStorage.setItem("tokenApp", user.token);
-                    Toast.show({
-                        type: 'success',
-                        text1: 'Đăng nhập thành công!',
-                        visibilityTime: 2000,
-                        autoHide: true,
-                    });
-                    // navigation.navigate('MenuPane');
-                } else {
-                    const texts = user.split("!");
-                    Toast.show({
-                        type: 'error',
-                        text1: texts[0] + '!',
-                        text2: texts[1] + '!',
-                        visibilityTime: 20000,
-                        autoHide: false,
-                    });
-                }
-            }
+
+        setIsLoading(true);
+        const user = await LoginApi(username, password);
+        setIsLoading(false);
+        if (user) {
+
+            AsyncStorage.setItem("tokenApp", user.token);
+            Toast.show({
+                type: 'success',
+                text1: 'Đăng nhập thành công!',
+                visibilityTime: 2000,
+                autoHide: true,
+            });
+            navigation.navigate('MenuPane');
 
         } else {
             Toast.show({
                 type: 'error',
-                text1: 'Sai tên đăng nhập hoặc mật khẩu',
-                visibilityTime: 2000,
-                autoHide: true,
+                text1: 'Sai tài khoản hoặc mật khẩu!',
+                visibilityTime: 20000,
+                autoHide: false,
             });
         }
 

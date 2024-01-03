@@ -25,7 +25,7 @@ export async function LoginApi(username, password, name) {
         const isVip = responseData.data.vip;
         const expiredVipDate = responseData.data.expired_vip_date;
         const token = responseData.data.access_token;
-        return new User(id, name, isNonLocked, isVip, expiredVipDate, token);
+        return responseData.data;
     }
     return null;
 }

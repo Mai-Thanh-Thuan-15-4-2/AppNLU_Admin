@@ -9,8 +9,10 @@ const App = () => {
   const Stack = createStackNavigator();
   return (
     <NavigationContainer>
-    <Stack.Screen name="Login" component={Login}/>
-    <Stack.Screen name="MenuPane" component={MenuPane} options={{ gestureEnabled: false }} />
+      <Stack.Navigator initialState={Login}>
+        <Stack.Screen name="Login" component={Login} options={{ gestureEnabled: false, headerShown: false }}/>
+        <Stack.Screen name="MenuPane" component={MenuPane} options={{ gestureEnabled: false, headerShown: false }} />
+      </Stack.Navigator>
     </NavigationContainer>
   );
 };

@@ -49,11 +49,11 @@ const Report = () => {
     setFilterBy(value);
   };
   const toggleStatus = (itemId) => {
-    setReportData(prevData =>
-      prevData.map(item =>
-        item.id === itemId ? { ...item, status: item.status === 1 ? 0 : 1 } : item
-      )
-    );
+    // setReportData(prevData =>
+    //   prevData.map(item =>
+    //     item.id === itemId ? { ...item, status: item.status === 1 ? 0 : 1 } : item
+    //   )
+    // );
   };
   const truncateText = (text, limit, charLimit) => {
     if (text.length > charLimit) {
