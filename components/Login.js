@@ -66,6 +66,7 @@ export default function Login({ navigation }) {
         setIsLoading(true);
         const user = await LoginApi(username, password);
         setIsLoading(false);
+        console.log(user)
         if (user) {         
             Toast.show({
                 type: 'success',
