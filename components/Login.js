@@ -66,9 +66,7 @@ export default function Login({ navigation }) {
         setIsLoading(true);
         const user = await LoginApi(username, password);
         setIsLoading(false);
-        if (user) {
-
-            AsyncStorage.setItem("tokenApp", user.token);
+        if (user) {         
             Toast.show({
                 type: 'success',
                 text1: 'Đăng nhập thành công!',

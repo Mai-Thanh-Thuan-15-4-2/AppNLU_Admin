@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, ActivityIndicator } from 'react-native';
 import Modal from 'react-native-modal';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { getAllUser } from '../service/NLUAppApiCaller';
+import { StringToDate, getAllUser, lockUser, unlockUser } from '../service/NLUAppApiCaller';
 import { Dropdown } from 'react-native-element-dropdown';
-import { colors } from '../BaseStyle/Style';
+import { colors, loadPage } from '../BaseStyle/Style';
 
 
 
@@ -17,47 +17,48 @@ const User = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [listOption, setListOption] = useState([]);
   const [selectedIdOption, setSelectedIdOption] = useState(null);
+  const [isUserLocked, setIsUserLocked] = useState(false);
 
 
-  const userData = [
-    { mssv: '001', status: 'Active', role: 'User' },
-    { mssv: '002', status: 'Blocked', role: 'Admin' },
-    { mssv: '003', status: 'Active', role: 'User' },
-    { mssv: '004', status: 'Active', role: 'User' },
-    // Add more user data as needed
-  ];
+  // const userData = [
+  //   { mssv: '001', status: 'Active', role: 'User' },
+  //   { mssv: '002', status: 'Blocked', role: 'Admin' },
+  //   { mssv: '003', status: 'Active', role: 'User' },
+  //   { mssv: '004', status: 'Active', role: 'User' },
+  //   // Add more user data as needed
+  // ];
 
 
-  // useEffect(() => {
-  //   const fetchfeesData = async () => {
+  useEffect(() => {
+    const fetchUserData = async () => {
+      setIsLoading(true)
+      const data = await getAllUser();
+      console.log(data)
 
-  //     setIsLoading(true)
-  //     const data = await getAllUser();
-  //     if (data.length > 0) {
-  //       setUserList(data);
-  //       console.log(data)
-  //     } else {
-  //       Toast.show({
-  //         type: 'error',
-  //         text1: 'Có lỗi xảy ra!',
-  //         text2: 'Không thể lấy dữ liệu từ trang ĐKMH',
-  //         visibilityTime: 2000,
-  //         autoHide: true,
-  //       });
-  //     }
-  //     setIsLoading(false)
+      if (data.length > 0) {
+        setUserList(data);
+      } else {
+        Toast.show({
+          type: 'error',
+          text1: 'Có lỗi xảy ra!',
+          text2: 'Không thể lấy dữ liệu từ trang ĐKMH',
+          visibilityTime: 2000,
+          autoHide: true,
+        });
+      }
+      setIsLoading(false)
 
-  //   };
+    };
 
-  //   fetchfeesData();
+    fetchUserData();
 
-  // }, []);
+  }, []);
 
   /* Dropdown */
   useEffect(() => {
     const data = [
       { id: 1, value: 'Chỉ User' },
-      { id: 2, value: 'Chỉ Admin' },
+      { id: 2, value: 'Chỉ Manager' },
     ];
     setListOption(data);
 
@@ -70,10 +71,10 @@ const User = () => {
 
 
 
-  const filteredUsers = userData.filter(user => user.mssv.includes(searchTerm.toLowerCase()));
+  const filteredUsers = userList.filter(user => user.user_name.includes(searchTerm.toLowerCase()));
 
   const sortedUsers = [...filteredUsers].sort((a, b) =>
-    sortOrder === 'asc' ? a.mssv.localeCompare(b.mssv) : b.mssv.localeCompare(a.mssv)
+    sortOrder === 'asc' ? a.user_name.localeCompare(b.user_name) : b.user_name.localeCompare(a.user_name)
   );
 
   const toggleModal = () => {
@@ -90,7 +91,16 @@ const User = () => {
     toggleModal();
   };
   const onLockAccount = (user) => {
-    console.log("khóa" + user.mssv)
+    if (user.non_locked) {
+      console.log("khóa" + user.user_name)
+
+      // lockUser(user.user_name);
+      setIsUserLocked(true);
+    } else {
+      console.log(" mở khóa" + user.user_name)
+      // unlockUser(user.user_name);
+      setIsUserLocked(false);
+    }
   };
   const addVip = (user) => {
     console.log("thêm VIP")
@@ -126,22 +136,36 @@ const User = () => {
   const [expandedItem, setExpandedItem] = useState(null);
 
   const openOptionsModalUserItem = (item) => {
-    setExpandedItem(item.mssv === expandedItem ? null : item.mssv);
+    setExpandedItem(item.user_name === expandedItem ? null : item.user_name);
   };
+  function formatDateTime(inputString) {
+    if (inputString === null) return null;
+    const date = new Date(inputString);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const seconds = String(date.getSeconds()).padStart(2, '0');
 
+    // Tạo chuỗi định dạng "dd-mm-yyyy hh-mm-ss"
+    const formattedDateTime = `${day}-${month}-${year} ${hours}:${minutes}:${seconds}`;
+
+    return formattedDateTime;
+  }
 
   const renderItem = ({ item }) => {
-    const isExpanded = (item.mssv === expandedItem);
+    const isExpanded = (item.user_name === expandedItem);
 
     return (
       <TouchableOpacity style={styles.userListStyle} onPress={() => openOptionsModalUserItem(item)}>
         <View style={styles.userItem}>
-          <Text style={styles.userItemText}>{item.mssv}</Text>
+          <Text style={styles.userItemText}>{item.user_name}</Text>
 
-          {item.status === 'Active' ? (
-            <Text style={[styles.userItemText, styles.userItemTextNormal]}>{item.status}</Text>
+          {item.nonLocked === true ? (
+            <Text style={[styles.userItemText, styles.userItemTextNormal]}>{'Active'}</Text>
           ) : (
-            <Text style={[styles.userItemText, styles.userItemTextBlock]}>{item.status}</Text>
+            <Text style={[styles.userItemText, styles.userItemTextBlock]}>{'Blocked'}</Text>
           )}
 
           {item.role === 'Admin' ? (
@@ -150,15 +174,19 @@ const User = () => {
             <Text style={[styles.userItemText]}>{item.role}</Text>
           )}
           <TouchableOpacity onPress={() => openOptionsModal(item)} style={styles.optionsMenu}>
-            <Text style={[{fontWeight:'bold'}]}>...</Text>
+            <Text style={[{ fontWeight: 'bold' }]}>...</Text>
           </TouchableOpacity>
         </View>
         {isExpanded && (
 
           <View style={styles.expandedInfo}>
-            <Text style={styles.expandedItemText}>{`Ngày hết hạn VIP: ${item.mssv}`}</Text>
-            <Text style={styles.expandedItemText}>{`Tên tài khoản: ${item.role}`}</Text>
-            {/* Thêm các thông tin khác nếu cần */}
+            <Text style={styles.expandedItemText}>{`Tên tài khoản: ${item.name}`}</Text>
+            <Text style={styles.expandedItemText}>{`Ngày hết hạn VIP: ${formatDateTime(item.expired_vip_date)}`}</Text>
+            {item.vip === true ? (
+              <Text style={styles.expandedItemTextVip}>{` ${'VIP'}`}</Text>
+            ) : (
+              <Text style={styles.expandedItemText}>{`Tài khoản: ${'Thường'}`}</Text>
+            )}
           </View>
         )}
       </TouchableOpacity>
@@ -170,6 +198,7 @@ const User = () => {
     <View style={styles.container}>
       <TextInput
         style={styles.searchInput}
+        placeholderTextColor={"lightgray"}
         placeholder="Tìm kiếm theo MSSV"
         onChangeText={text => setSearchTerm(text)}
       />
@@ -193,15 +222,15 @@ const User = () => {
       <FlatList
         data={sortedUsers}
         renderItem={renderItem}
-        keyExtractor={item => item.mssv}
+        keyExtractor={item => item.user_name}
       />
 
       {/* Options Modal */}
       <Modal isVisible={isModalVisible} onBackdropPress={closeOptionsModal}>
         <View style={styles.modalContainer}>
           <TouchableOpacity onPress={() => handleOptionPress('Khóa tài khoản')} style={styles.modalOption}>
-            <Icon name="ios-lock-closed" size={18} color="#333" style={styles.icon} />
-            <Text style={styles.optionText}>Khóa tài khoản</Text>
+            <Icon name={isUserLocked ? "ios-unlock" : "ios-lock-closed"} size={18} color="#333" style={styles.icon} />
+            <Text style={styles.optionText}>{isUserLocked  ? "Mở khóa" : "Khóa tài khoản"}</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={() => handleOptionPress('Thêm VIP')} style={styles.modalOption}>
             <Icon name="ios-star" size={18} color="#333" style={styles.icon} />
@@ -213,11 +242,11 @@ const User = () => {
           </TouchableOpacity>
         </View>
       </Modal>
-      {isLoading ? (
+      {/* {isLoading ? (
         <View style={loadPage.loadingContainer}>
           <ActivityIndicator size="large" color="#2bc250" />
         </View>) : (<></>)
-      }
+      } */}
     </View>
   );
 };
@@ -271,7 +300,6 @@ const styles = StyleSheet.create({
     padding: 10,
   },
   userItem: {
-
     flexDirection: 'row',
     justifyContent: 'space-between',
 
@@ -279,11 +307,17 @@ const styles = StyleSheet.create({
   expandedInfo: {
     marginTop: 10,
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'space-between',
   },
-  expandedItemText:{
+  expandedItemText: {
     fontSize: 14,
     paddingVertical: 5,
+  },
+  expandedItemTextVip: {
+    color: colors.vip,
+    fontWeight: 'bold',
+    fontSize: 20,
   },
   userItemText: {
     fontSize: 16,
