@@ -19,12 +19,9 @@ export async function LoginApi(username, password, name) {
         const responseData = await response.json();
         const data = responseData.data;
         if (!data) return responseData.message;
-        const id = responseData.data.user_name;
-        const name = responseData.data.name;
-        const isNonLocked = responseData.data.non_locked;
-        const isVip = responseData.data.vip;
-        const expiredVipDate = responseData.data.expired_vip_date;
         const token = responseData.data.access_token;
+        AsyncStorage.setItem("tokenApp", token);
+        // console.log(token + "token nè")
         return responseData.data;
     }
     return null;
@@ -72,10 +69,13 @@ export async function getAllUser() {
     });
 
     if (response.ok) {
+
+        // console.log(response)
         const responseData = await response.json();
         if (responseData.code == 200){
             return responseData.data;
         }
+        console.log(responseData)
     }
     return null;
 }
@@ -96,6 +96,7 @@ export async function lockUser(id) {
 
     if (response.ok) {
         const responseData = await response.json();
+        // console.log(response.message)
         return responseData.message
     }
     return null;

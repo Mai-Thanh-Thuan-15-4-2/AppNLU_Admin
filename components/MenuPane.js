@@ -35,7 +35,7 @@ const MenuPane = () => {
     >
       <Tab.Screen name="Người dùng" component={User} />
       <Tab.Screen name="Báo cáo" component={Report}/>
-      <Tab.Screen name="Admin" component={HomeScreen}/>
+      <Tab.Screen name="Admin" component={Admin}/>
       
     </Tab.Navigator>
   );
