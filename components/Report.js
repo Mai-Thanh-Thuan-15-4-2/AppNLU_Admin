@@ -1,29 +1,50 @@
 import React, { useState, useEffect } from 'react';
-import { Text, View, FlatList, StyleSheet, TextInput, TouchableOpacity, Alert, Modal } from 'react-native';
+import { Text, View, FlatList, StyleSheet, TextInput, SafeAreaView, TouchableOpacity, Alert, Modal, ScrollView } from 'react-native';
 import { getAllReport, LoginApi, getUserData } from '../service/NLUAppApiCaller';
 import { Dropdown } from 'react-native-element-dropdown';
 import Icon from 'react-native-vector-icons/Ionicons';
+import { WebView } from 'react-native-webview';
+
+const splitTextByWords = (text, wordsPerBlock) => {
+  const words = text.split(' ');
+  const textBlocks = [];
+  let block = '';
+
+  words.forEach((word, index) => {
+    if (index !== 0 && index % wordsPerBlock === 0) {
+      textBlocks.push(block);
+      block = '';
+    }
+    block += `${word} `;
+  });
+
+  if (block.trim() !== '') {
+    textBlocks.push(block);
+  }
+
+  return textBlocks;
+};
 
 const Report = () => {
   const [reportData, setReportData] = useState([
     {
       id: '1',
       message: 'App xấu quá',
-      time: '00:00:00 01-01-2024',
+      time: '01-01-2024 00:00:00 ',
       name: '20130127',
       status: 1
     },
     {
       id: '2',
       message: 'ljkdcskdsfkjdfchiờhcủhfikcreoihfkncreoihkfỉegdihv',
-      time: '00:00:00 01-01-2024',
+      time: '01-01-2024 00:00:00',
       name: '20130125',
       status: 0
     },
     {
       id: '3',
       message: 'Những suy nghĩ, tình cảm của con người đều tồn tại ở dạng trừu tượng bởi vậy, khó có thể biết được những phẩm chất tốt của con người thông qua suy nghĩ, tình cảm của họ. Hành động chính là thước đo chân thực của mọi phẩm chất tốt đẹp. - Mặt khác, nếu có những suy nghĩ, tình cảm tốt đẹp mà chỉ giữ trong lòng, hoặc nói suông không thể hiện ra bằng hành động thì đó chỉ là sự huyễn hoặc người khác và tự huyễn hoặc bản thân về phẩm chất tốt của mình. VD: một bộ phận giới trẻ là những “anh hùng bàn phím” trên các rang mạng xã hội, chỉ biết nói những diều hay nhưng thực tế lại không thực hiện.',
-      time: '00:00:00 01-01-2024',
+      time: '01-01-2024 00:00:00',
       name: '20130120',
       status: 1
     },
@@ -63,57 +84,56 @@ const Report = () => {
     }
     return text;
   };
-  
-  
+
+
   const closeModal = () => {
     setModalVisible(false);
     setSelectedItem(null);
   };
   const handleDelete = (itemId) => {
-      Alert.alert(
-        "Xác nhận xóa",
-        "Bạn có chắc chắn muốn xóa báo cáo này không?",
-        [
-          {
-            text: "Hủy",
-            style: "cancel"
-          },
-          {
-            text: "Xóa",
-          }
-        ]
-      );
+    Alert.alert(
+      "Xác nhận xóa",
+      "Bạn có chắc chắn muốn xóa báo cáo này không?",
+      [
+        {
+          text: "Hủy",
+          style: "cancel"
+        },
+        {
+          text: "Xóa",
+        }
+      ]
+    );
   };
-
   const renderItem = ({ item }) => (
     <TouchableOpacity onPress={() => {
       setSelectedItem(item);
       setModalVisible(true);
     }}>
       <View style={styles.item}>
-      <View style={styles.headReport}>
-        <Text style={styles.name}>{item.name}</Text>
-        <Text style={styles.time}>{item.time}</Text>
-      </View>
-      <View style={styles.footReport}>
-        <Text style={styles.messShort}>{truncateText(item.message, 5, 25)}</Text>
-        <View style={styles.statusContainer}>
-        <TouchableOpacity onPress={() => toggleStatus(item.id)}>
-            <Icon
-              name={item.status === 1 ? 'star' : 'star-outline'}
-              size={22}
-              color={item.status === 1 ? 'gold' : 'gray'}
-            />
-          </TouchableOpacity>
-          <Text>   </Text>
-          <TouchableOpacity onPress={() => handleDelete(item.id)}>
-            <Icon
-              name={'trash-outline'}
-              size={22}
-              color={'red'}
-            />
-          </TouchableOpacity>
+        <View style={styles.headReport}>
+          <Text style={styles.name}>{item.name}</Text>
+          <Text style={styles.time}>{item.time}</Text>
         </View>
+        <View style={styles.footReport}>
+          <Text style={styles.messShort}>{truncateText(item.message, 5, 25)}</Text>
+          <View style={styles.statusContainer}>
+            <TouchableOpacity onPress={() => toggleStatus(item.id)}>
+              <Icon
+                name={item.status === 1 ? 'star' : 'star-outline'}
+                size={22}
+                color={item.status === 1 ? 'gold' : 'gray'}
+              />
+            </TouchableOpacity>
+            <Text>   </Text>
+            <TouchableOpacity onPress={() => handleDelete(item.id)}>
+              <Icon
+                name={'trash-outline'}
+                size={22}
+                color={'red'}
+              />
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
     </TouchableOpacity>
@@ -124,7 +144,7 @@ const Report = () => {
         style={styles.input}
         placeholder="Tìm kiếm..."
       />
- <View style={styles.dropdownContainer}>
+      <View style={styles.dropdownContainer}>
         <Dropdown
           style={styles.dropdown}
           data={dataSort}
@@ -132,56 +152,58 @@ const Report = () => {
           valueField="value"
           placeholder="Sắp xếp"
           value={sortBy}
-          onChange={handleSortChange} 
-          />
+          onChange={handleSortChange}
+        />
         <Dropdown
           style={styles.dropdown}
           data={dataFilter}
           labelField="label"
           valueField="value"
           placeholder="Lọc"
-          value={filterBy} 
+          value={filterBy}
           onChange={handleFilterChange}
         />
       </View>
       <FlatList
-      style={styles.FlatList}
+        style={styles.FlatList}
         data={reportData}
         renderItem={renderItem}
         keyExtractor={item => item.id}
       />
-       <Modal
+      <Modal
         animationType="slide"
         transparent={true}
         visible={modalVisible}
         onRequestClose={closeModal}
       >
-    <TouchableOpacity
-    style={styles.centeredView}
-    activeOpacity={1}
-    onPress={closeModal}>
+        <View
+          style={styles.centeredView}
+          activeOpacity={1}>
           <View style={styles.modalView}>
             {selectedItem && (
               <View>
                 <Text style={styles.titleModal}>Thông tin chi tiết</Text>
                 <View style={styles.modalCont}>
-                <View style={styles.row}>
-                <Icon style={styles.label} name='person-circle-outline' size={25}></Icon><Text>  </Text><Text style={styles.nameuser}>{selectedItem.name}</Text>
-                </View>
-                <View style={styles.row}>
-                <Icon style={styles.label} name='time-outline' size={25}></Icon><Text>  </Text><Text style={styles.nameuser}>{selectedItem.time}</Text>
-                </View>
-                <View style={styles.contentDetail}>
-                <Text style={styles.mess}>{selectedItem.message}</Text>
-                </View>
+                  <View style={styles.row}>
+                    <Icon style={styles.label} name='person-circle-outline' size={25}></Icon><Text>  </Text><Text style={styles.nameuser}>{selectedItem.name}</Text>
+                  </View>
+                  <View style={styles.row}>
+                    <Icon style={styles.label} name='time-outline' size={25}></Icon><Text>  </Text><Text style={styles.nameuser}>{selectedItem.time}</Text>
+                  </View>
+                  <View style={styles.containerLabel}>
+                    <Text style={styles.labelContent}>Nội dung</Text>
+                  </View>
+                  <View contentContainerStyle={styles.contentDetail}>
+                    <Text style={styles.mess}>{selectedItem.message}</Text>
+                  </View>
                 </View>
                 <TouchableOpacity style={styles.btnClose} onPress={closeModal}>
-                <Text style={styles.back}>Quay lại</Text>
+                  <Text style={styles.back}>Quay lại</Text>
                 </TouchableOpacity>
               </View>
             )}
           </View>
-        </TouchableOpacity>
+        </View>
       </Modal>
     </View>
   );
@@ -200,7 +222,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   dropdownContainer: {
-    flexDirection: 'row', 
+    flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 10,
   },
@@ -224,8 +246,8 @@ const styles = StyleSheet.create({
     marginTop: 5,
     backgroundColor: 'white',
   },
-  FlatList:{
-  margin: 5,
+  FlatList: {
+    margin: 5,
   },
   statusContainer: {
     right: 0,
@@ -233,25 +255,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 5,
   },
-  time:{
+  time: {
     color: 'gray',
   },
   name: {
-   fontWeight: 'bold',
-   fontSize: 16,
-   color: 'blue',
-  },
-  mess:{
-   textAlign: 'justify',
-   padding: 5,
+    fontWeight: 'bold',
+    fontSize: 16,
+    color: 'blue',
   },
   headReport: {
-    flexDirection: 'row', 
+    flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 10,
   },
   footReport: {
-    flexDirection: 'row', 
+    flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 10,
   },
@@ -290,9 +308,9 @@ const styles = StyleSheet.create({
   back: {
     color: 'white',
   },
-  titleModal:{
+  titleModal: {
     marginTop: 5,
-    color: 'blue',
+    color: '#0D1282',
     fontSize: 20,
     fontWeight: 'bold',
     justifyContent: 'center',
@@ -300,30 +318,51 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     borderRadius: 5,
   },
-  modalCont:{
+  modalCont: {
     marginTop: 10,
   },
-  row:{
+  row: {
     marginTop: 10,
-    flexDirection: 'row', 
+    flexDirection: 'row',
+    borderBottomWidth: 1,
+    borderBottomColor: 'gray',
   },
-  label:{
-    color: '#0E5454',
+  label: {
+    color: '#0D1282',
     fontWeight: 'bold',
   },
-  contentDetail:{
-    marginTop: 10,
+  scrollViewContent: {
+    paddingHorizontal: 20,
+    flexGrow: 1,
+  },
+  mess: {
+    textAlign: 'justify',
+    padding: 5,
+    fontSize: 13,
+  },
+  contentDetail: {
+    marginTop: 20,
     borderWidth: 1,
-    borderColor: 'gray', 
-    borderRadius: 5, 
-  },
-  messShort:{
-    marginTop: 5,
-  },
-  nameuser:{
-   marginTop: 5,
+    padding: 5,
+    borderColor: 'gray',
+    borderRadius: 5,
   },
 
+  messShort: {
+    marginTop: 5,
+  },
+  nameuser: {
+    marginTop: 5,
+  },
+  containerLabel: {
+    paddingTop: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  labelContent:{
+    fontWeight: 'bold',
+    color: '#0D1282'
+  }
 });
 
 export default Report;
