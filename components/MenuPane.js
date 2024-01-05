@@ -2,7 +2,6 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Icon from 'react-native-vector-icons/Ionicons';
 import User from './User';
-import Admin from './Admin';
 import Report from './Report';
 import Statistic from './Statistic';
 
@@ -33,7 +32,7 @@ const MenuPane = () => {
         },
       })}
     >
-      <Tab.Screen name="Người dùng" component={User} />
+      <Tab.Screen name="Người dùng" component={User}/>
       <Tab.Screen name="Báo cáo" component={Report}/>
       <Tab.Screen name="Thống kê" component={Statistic}/>
       

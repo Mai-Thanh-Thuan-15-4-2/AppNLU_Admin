@@ -32,9 +32,9 @@ const Statistic = () => {
       if (data.length > 0) {
         setUserList(data);
         setAccountStats({
-          lockedAccounts: userList.filter(user => user.non_locked === true).length,
-          regularUsers: userList.filter(user => user.vip === false).length,
-          admins: userList.filter(user => user.role === 'MANAGER').length,
+          lockedAccounts: data.filter(user => user.non_locked === false).length,
+          regularUsers: data.filter(user => user.vip === false).length,
+          admins: data.filter(user => user.role === 'MANAGER').length,
           totalUsers: data.length,
           totalAccounts: data.length,
         });
@@ -53,14 +53,13 @@ const Statistic = () => {
 
     fetchDataAndSetStats();
   }, []);
-  const handleAddAccountPress = () => {
-    navigation.navigate('AddAccount');
-  };
+
   const toggleModal = () => {
     setModalVisible(!isModalVisible);
   };
   const closeOptionsModal = () => {
     setName('');
+    setUsername('');
     setConfirmPassword('');
     setPassword('');
     toggleModal();
@@ -71,12 +70,23 @@ const Statistic = () => {
     console.log(username)
     console.log(password)
     console.log(confirmPassword)
+    if(name === '' || username === '' || password === '' || confirmPassword === '') {
+      alert('Vui lòng nhập đầy đủ thông tin!!!');
+      return;
+    }
     if (password !== confirmPassword) {
       alert('Mật khẩu không khớp!');
       return;
     }
     await addManager(username, password, name)
     alert('Thêm tài khoản thành công!');
+    setAccountStats({
+      ...accountStats,
+      admins: userList.filter(user => user.role === 'MANAGER').length + 1,
+      totalUsers: userList.length + 1,
+      totalAccounts: userList.length + 1,
+    });
+
     toggleModal();
   };
 
@@ -84,41 +94,48 @@ const Statistic = () => {
     <View style={styles.container}>
       {/* Grid items */}
       <View style={[styles.gridItem, { backgroundColor: '#3498db' }]}>
-        <Text style={styles.gridItemText}>Tài khoản bị khóa: {accountStats.lockedAccounts}</Text>
+        <Text style={styles.gridItemText}>Tài khoản bị khóa </Text>
+        <Text style={[styles.gridItemText, {textAlign: 'right', fontSize: 20, fontWeight: 'bold'}]}>{accountStats.lockedAccounts}</Text>
       </View>
 
       <View style={[styles.gridItem, { backgroundColor: '#2ecc71' }]}>
-        <Text style={styles.gridItemText}>Người dùng thường: {accountStats.regularUsers}</Text>
+        <Text style={styles.gridItemText}>Người dùng thường </Text>
+        <Text style={[styles.gridItemText, {textAlign: 'right', fontSize: 20, fontWeight: 'bold'}]}>{accountStats.regularUsers}</Text>
       </View>
 
       <View style={[styles.gridItem, { backgroundColor: '#e74c3c' }]}>
-        <Text style={styles.gridItemText}>Người dùng MANAGER: {accountStats.admins}</Text>
+        <Text style={styles.gridItemText}>Người dùng MANAGER </Text>
+        <Text style={[styles.gridItemText, {textAlign: 'right', fontSize: 20, fontWeight: 'bold'}]}>{accountStats.admins}</Text>
       </View>
 
       <View style={[styles.gridItem, { backgroundColor: '#f39c12' }]}>
-        <Text style={styles.gridItemText}>Tổng số người dùng: {accountStats.totalUsers}</Text>
+        <Text style={styles.gridItemText}>Tổng số người dùng </Text>
+        <Text style={[styles.gridItemText, {textAlign: 'right', fontSize: 20, fontWeight: 'bold'}]}>{accountStats.totalUsers}</Text>
       </View>
 
       <View style={[styles.gridItem, { backgroundColor: '#9b59b6' }]}>
-        <Text style={styles.gridItemText}>Tổng số tài khoản: {accountStats.totalAccounts}</Text>
+        <Text style={styles.gridItemText}>Tổng số tài khoản </Text>
+        <Text style={[styles.gridItemText, {textAlign: 'right', fontSize: 20, fontWeight: 'bold'}]}>{accountStats.totalAccounts}</Text>
       </View>
       <TouchableOpacity style={styles.addButton} onPress={toggleModal}>
         <Text style={styles.buttonText}>+</Text>
       </TouchableOpacity>
+
+      {/* thêm một điều kiện là người dùng admin mới được thấy nút mở modal và modal */}
       <Modal
         animationType="slide"
         isVisible={isModalVisible}
         onBackdropPress={closeOptionsModal}
       >
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center'}}>
-          <View style={{ backgroundColor: 'white', padding: 20, borderRadius: 10, alignItems: 'center'  }}>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <View style={{ backgroundColor: 'white', padding: 30, borderRadius: 10, alignItems: 'center' }}>
             <TextInput
               placeholder="Tên người dùng"
               value={name}
               onChangeText={setName}
               style={styles.inputStyle}
             />
-             <TextInput
+            <TextInput
               placeholder="Tên đăng nhập"
               value={username}
               onChangeText={setUsername}
@@ -163,7 +180,7 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   gridItem: {
-    width: '48%', 
+    width: '48%',
     aspectRatio: 1,
     borderRadius: 8,
     marginBottom: 16,
@@ -182,15 +199,15 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 50,
     width: 50,
-    height:50,
-    alignItems: 'center', 
+    height: 50,
+    alignItems: 'center',
   },
   buttonText: {
     color: 'white',
     fontSize: 24,
     fontWeight: 'bold',
   },
-  inputStyle:{
+  inputStyle: {
     marginBottom: 10, borderBottomWidth: 1, borderColor: '#ccc', width: 250,
   },
 });
