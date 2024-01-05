@@ -29,7 +29,6 @@ const User = () => {
     const fetchUserData = async () => {
       setIsLoading(true)
       const data = await getAllUser();
-      console.log(data)
 
       if (data.length > 0) {
         setUserList(data);
@@ -321,12 +320,14 @@ const User = () => {
             <></>
           ) : (
             <View style={styles.modalOption}>
-              <Icon name="ios-star" size={18} color="#333" style={styles.icon} />
+              <Icon name="ios-star" size={18} color={colors.vip} style={styles.icon} />
               <Text style={styles.optionText}>Thêm VIP</Text>
               <View style={styles.expandableContent}>
                 <TextInput
                   style={styles.input}
-                  placeholder="Nhập số ngày VIP"
+                  placeholder="Số ngày"
+                  placeholderTextColor={'lightgray'}
+                  borderRadius={10}
                   keyboardType="numeric"
                   value={vipDays}
                   onChangeText={(text) => setVipDays(text.replace(/[^0-9]/g, ''))} // Chỉ cho phép nhập số
@@ -341,7 +342,7 @@ const User = () => {
 
 
           <TouchableOpacity onPress={() => handleOptionPress('Xóa tài khoản')} style={[styles.modalOption, styles.noneBorderBottom]}>
-            <Icon name="ios-trash" size={18} color="#333" style={styles.icon} />
+            <Icon name="ios-trash" size={18} color="red" style={styles.icon} />
             <Text style={styles.optionText}>Xóa tài khoản</Text>
           </TouchableOpacity>
         </View >
@@ -449,7 +450,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#ccc',
   },
-  noneBorderBottom: { borderBlockColor: 'transparent', },
+  noneBorderBottom: { borderBlockColor: 'transparent'},
   icon: {
     marginRight: 10,
   },
@@ -470,7 +471,7 @@ const styles = StyleSheet.create({
   circleContainer: {
     justifyContent: 'center',
     width: '20%',
-    height: 35,
+    height: 40,
     overflow: 'hidden',
     marginHorizontal: 8,
   },
