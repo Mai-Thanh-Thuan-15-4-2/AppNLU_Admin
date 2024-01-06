@@ -14,14 +14,15 @@ export async function LoginApi(username, password, name) {
         },
         body: params,
     });
+    
 
     if (response.ok) {
         const responseData = await response.json();
+        console.log(responseData)
         const data = responseData.data;
-        if (!data) return responseData.message;
+        if (!data) return null;
         const token = responseData.data.access_token;
         AsyncStorage.setItem("tokenApp", token);
-        // console.log(token + "token nè")
         return responseData.data;
     }
     return null;

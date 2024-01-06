@@ -192,10 +192,7 @@ const Report = () => {
         return item;
       });
       setGeneral(updatedGeneral);
-    }
-
-    setFilteredGeneralData(general);
-  
+    }  
     setShowFullContentMap(prevState => ({
       ...prevState,
       [itemId]: !prevState[itemId],
@@ -204,13 +201,8 @@ const Report = () => {
   
 
   useEffect(() => {
-    setShowFullContentMap(prevState => {
-      const updatedMap = { ...prevState };
-      general.forEach(item => {
-        updatedMap[item.id] = item.read;
-      });
-      return updatedMap;
-    });
+    setFilteredGeneralData(general);
+    console.log(filteredGeneralData);
   }, [general]);
   
   
