@@ -1,67 +1,164 @@
-import React, { useState, useEffect } from 'react';
-import { Text, View, FlatList, StyleSheet, TextInput, SafeAreaView, TouchableOpacity, Alert, Modal, ScrollView } from 'react-native';
-import { getAllReport, LoginApi, getUserData } from '../service/NLUAppApiCaller';
+import React, { useState, useEffect, useRef } from 'react';
+import { Alert, Text, View, FlatList, StyleSheet, TextInput, PanResponder, TouchableOpacity, Modal, Animated, Dimensions } from 'react-native';
+import { getAllReport, readReport, getAllUser, grantStarReport, rmStarReport, deleteReport } from '../service/NLUAppApiCaller';
 import { Dropdown } from 'react-native-element-dropdown';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { WebView } from 'react-native-webview';
 
-const splitTextByWords = (text, wordsPerBlock) => {
-  const words = text.split(' ');
-  const textBlocks = [];
-  let block = '';
 
-  words.forEach((word, index) => {
-    if (index !== 0 && index % wordsPerBlock === 0) {
-      textBlocks.push(block);
-      block = '';
-    }
-    block += `${word} `;
-  });
+function formatDateTime(dateTimeString) {
+  const date = new Date(dateTimeString);
 
-  if (block.trim() !== '') {
-    textBlocks.push(block);
-  }
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = date.getFullYear();
 
-  return textBlocks;
-};
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  const seconds = String(date.getSeconds()).padStart(2, '0');
 
+  return `${day}-${month}-${year} ${hours}:${minutes}:${seconds}`;
+}
 const Report = () => {
-  const [reportData, setReportData] = useState([
-    {
-      id: '1',
-      message: 'App xấu quá',
-      time: '01-01-2024 00:00:00 ',
-      name: '20130127',
-      status: 1
-    },
-    {
-      id: '2',
-      message: 'ljkdcskdsfkjdfchiờhcủhfikcreoihfkncreoihkfỉegdihv',
-      time: '01-01-2024 00:00:00',
-      name: '20130125',
-      status: 0
-    },
-    {
-      id: '3',
-      message: 'Những suy nghĩ, tình cảm của con người đều tồn tại ở dạng trừu tượng bởi vậy, khó có thể biết được những phẩm chất tốt của con người thông qua suy nghĩ, tình cảm của họ. Hành động chính là thước đo chân thực của mọi phẩm chất tốt đẹp. - Mặt khác, nếu có những suy nghĩ, tình cảm tốt đẹp mà chỉ giữ trong lòng, hoặc nói suông không thể hiện ra bằng hành động thì đó chỉ là sự huyễn hoặc người khác và tự huyễn hoặc bản thân về phẩm chất tốt của mình. VD: một bộ phận giới trẻ là những “anh hùng bàn phím” trên các rang mạng xã hội, chỉ biết nói những diều hay nhưng thực tế lại không thực hiện.',
-      time: '01-01-2024 00:00:00',
-      name: '20130120',
-      status: 1
-    },
-  ]);
-  const dataSort = [
-    { label: 'Mới nhất', value: '1' },
-    { label: 'Cũ nhất', value: '2' },
-  ];
-  const dataFilter = [
-    { label: 'Đánh dấu', value: '1' },
-    { label: 'Không đánh dấu', value: '2' },
-  ];
   const [sortBy, setSortBy] = useState('');
   const [filterBy, setFilterBy] = useState('');
-  const [selectedItem, setSelectedItem] = useState(null);
-  const [modalVisible, setModalVisible] = useState(false);
+  const [reportData, setReportData] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [general, setGeneral] = useState([]);
+  const pan = useRef(new Animated.ValueXY()).current;
+  const [itemToDelete, setItemToDelete] = useState(null);
+  const panValues = useRef([]).current;
+  const [showFullContentMap, setShowFullContentMap] = useState({});
+  const [filteredGeneralData, setFilteredGeneralData] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortOrder, setSortOrder] = useState('asc');
 
+
+
+  const createPanResponder = (index) => {
+    return PanResponder.create({
+      onMoveShouldSetPanResponderCapture: (_, gestureState) => {
+        return Math.abs(gestureState.dx) > Math.abs(gestureState.dy) && gestureState.dx < -5;
+      },
+      onPanResponderMove: Animated.event([null, { dx: panValues[index]?.x || 0 }], { useNativeDriver: false }),
+      onPanResponderRelease: async (e, gesture) => {
+        if (gesture.dx < -50) {
+          setItemToDelete(index);
+        } else {
+          Animated.spring(panValues[index], {
+            toValue: { x: 0, y: 0 },
+            useNativeDriver: false
+          }).start();
+        }
+      }
+    });
+  };
+
+  const handleDeleteConfirmation = async () => {
+    if (itemToDelete !== null) {
+      Alert.alert(
+        'Xác nhận xóa',
+        'Bạn có chắc chắn muốn xóa báo cáo này?',
+        [
+          {
+            text: 'Hủy',
+            style: 'cancel',
+            onPress: () => {
+              setItemToDelete(null);
+            },
+          },
+          {
+            text: 'Xóa',
+            style: 'destructive',
+            onPress: async () => {
+              try {
+                const idToDelete = general[itemToDelete].id;
+                const message = await deleteReport(idToDelete);
+                const updatedGeneral = [...general];
+                updatedGeneral.splice(itemToDelete, 1);
+                setGeneral(updatedGeneral);
+              } catch (error) {
+                console.error('Error deleting report:', error);
+              }
+              setItemToDelete(null);
+            },
+          },
+        ],
+        { cancelable: false }
+      );
+    }
+  };
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const fetchedUsers = await getAllUser();
+        setUsers(fetchedUsers);
+      } catch (error) {
+        console.error('Error fetching users:', error);
+      }
+    };
+
+    const fetchReports = async () => {
+      try {
+        const fetchedReports = await getAllReport();
+        setReportData(fetchedReports);
+      } catch (error) {
+        console.error('Error fetching reports:', error);
+      }
+    };
+    fetchUsers();
+    fetchReports();
+  }, []);
+
+  useEffect(() => {
+    if (reportData && users) {
+      const combinedData = reportData.map(report => {
+        const user = users.find(user => user.user_name === report.idReporter);
+        const name = user ? user.name : null;
+        return { ...report, name };
+      });
+      setGeneral(combinedData);
+      const filteredData = () => {
+        switch (filterBy.value) {
+          case '1':
+            return combinedData;
+          case '2':
+            return combinedData.filter(item => item.star === true);
+          case '3':
+            return combinedData.filter(item => item.star === false);
+          default:
+            return combinedData;
+        }
+      };
+
+      const sortedData = () => {
+        switch (sortBy.value) {
+          case '1':
+            return filteredData();
+          case '2':
+            return [...filteredData()].sort((a, b) => new Date(b.createDate) - new Date(a.createDate));
+          case '3':
+            return [...filteredData()].sort((a, b) => new Date(a.createDate) - new Date(b.createDate));
+          default:
+            return filteredData();
+        }
+      };
+
+      const filteredDataResult = sortedData();
+      setFilteredGeneralData(filteredDataResult);
+    }
+  }, [users, reportData, filterBy, sortBy]);
+
+
+  const dataSort = [
+    { label: 'Mặc định', value: '1' },
+    { label: 'Mới nhất', value: '2' },
+    { label: 'Cũ nhất', value: '3' },
+  ];
+  const dataFilter = [
+    { label: 'Mặc định', value: '1' },
+    { label: 'Đánh dấu', value: '2' },
+    { label: 'Không đánh dấu', value: '3' },
+  ];
   const handleSortChange = (value) => {
     setSortBy(value);
   };
@@ -69,80 +166,119 @@ const Report = () => {
   const handleFilterChange = (value) => {
     setFilterBy(value);
   };
-  const toggleStatus = (itemId) => {
-    // setReportData(prevData =>
-    //   prevData.map(item =>
-    //     item.id === itemId ? { ...item, status: item.status === 1 ? 0 : 1 } : item
-    //   )
-    // );
+  const toggleStatus = async (itemId, currentStatus) => {
+    try {
+      setReportData(prevData =>
+        prevData.map(item =>
+          item.id === itemId ? { ...item, star: !currentStatus } : item
+        )
+      );
+      if (currentStatus) {
+        await rmStarReport(itemId);
+      } else {
+        await grantStarReport(itemId);
+      }
+    } catch (error) {
+      console.error('Error:', error);
+    }
   };
-  const truncateText = (text, limit, charLimit) => {
-    if (text.length > charLimit) {
-      return text.slice(0, charLimit) + '...';
-    } else if (text.split(' ').length > limit) {
-      return text.split(' ').slice(0, limit).join(' ') + '...';
+  const toggleContent = async (itemId) => {
+    const message = await readReport(itemId);
+    if (message === 'success') {
+      const updatedGeneral = general.map(item => {
+        if (item.id === itemId) {
+          return { ...item, read: true };
+        }
+        return item;
+      });
+      setGeneral(updatedGeneral);
+    }
+
+    setFilteredGeneralData(general);
+  
+    setShowFullContentMap(prevState => ({
+      ...prevState,
+      [itemId]: !prevState[itemId],
+    }));
+  };
+  
+
+  useEffect(() => {
+    setShowFullContentMap(prevState => {
+      const updatedMap = { ...prevState };
+      general.forEach(item => {
+        updatedMap[item.id] = item.read;
+      });
+      return updatedMap;
+    });
+  }, [general]);
+  
+  
+  const truncateText = (text, itemId) => {
+    if (!showFullContentMap[itemId]) {
+      if (text.length > 25) return text.slice(0, 25) + '...';
     }
     return text;
   };
-
-
-  const closeModal = () => {
-    setModalVisible(false);
-    setSelectedItem(null);
-  };
-  const handleDelete = (itemId) => {
-    Alert.alert(
-      "Xác nhận xóa",
-      "Bạn có chắc chắn muốn xóa báo cáo này không?",
-      [
-        {
-          text: "Hủy",
-          style: "cancel"
-        },
-        {
-          text: "Xóa",
-        }
-      ]
+  const renderItem = ({ item, index }) => {
+    if (!panValues[index]) {
+      panValues[index] = new Animated.ValueXY();
+    }
+    const { width: screenWidth } = Dimensions.get('window');
+    return (
+      <Animated.View
+        style={{
+          transform: [{ translateX: panValues[index].x }],
+        }}
+        {...createPanResponder(index).panHandlers}
+      >
+        <View style={{ flexDirection: 'row' }}>
+          <TouchableOpacity style={{ width: screenWidth - 35, marginRight: 5 }} onPress={() => {
+            toggleContent(item.id);
+          }}>
+            <View style={styles.item}>
+              <View style={styles.headReport}>
+                <Text style={styles.name}>{item.name ? item.name : "Kẻ ẩn danh"}</Text>
+                <Text style={styles.time}>{formatDateTime(item.createDate)}</Text>
+              </View>
+              <View style={styles.footReport}>
+                <Text style={item.read ?  styles.havenotseen : styles.messShort}>
+                  {truncateText(item.message, item.id)}
+                </Text>
+                <View style={styles.statusContainer}>
+                  <TouchableOpacity onPress={() => toggleStatus(item.id, item.star)}>
+                    <Icon
+                      name={item.star === true ? 'star' : 'star-outline'}
+                      size={22}
+                      color={item.star === true ? 'gold' : 'gray'}
+                    />
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+          </TouchableOpacity>
+          <TouchableOpacity style={{ backgroundColor: 'red', width: screenWidth * 0.5, marginTop: 5, justifyContent: 'center', height: '92%' }} onPress={() => handleDeleteConfirmation()}>
+            <Icon style={styles.btnrm} name={'trash-outline'} size={22} />
+          </TouchableOpacity>
+        </View>
+      </Animated.View>
     );
   };
-  const renderItem = ({ item }) => (
-    <TouchableOpacity onPress={() => {
-      setSelectedItem(item);
-      setModalVisible(true);
-    }}>
-      <View style={styles.item}>
-        <View style={styles.headReport}>
-          <Text style={styles.name}>{item.name}</Text>
-          <Text style={styles.time}>{item.time}</Text>
-        </View>
-        <View style={styles.footReport}>
-          <Text style={styles.messShort}>{truncateText(item.message, 5, 25)}</Text>
-          <View style={styles.statusContainer}>
-            <TouchableOpacity onPress={() => toggleStatus(item.id)}>
-              <Icon
-                name={item.status === 1 ? 'star' : 'star-outline'}
-                size={22}
-                color={item.status === 1 ? 'gold' : 'gray'}
-              />
-            </TouchableOpacity>
-            <Text>   </Text>
-            <TouchableOpacity onPress={() => handleDelete(item.id)}>
-              <Icon
-                name={'trash-outline'}
-                size={22}
-                color={'red'}
-              />
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
-    </TouchableOpacity>
-  );
+  const handleSearch = (text) => {
+    setSearchTerm(text);
+    const filteredData = reportData.filter(item => item.message.toLowerCase().includes(text.toLowerCase()));
+    const sortedData = [...filteredData].sort((a, b) =>
+      sortOrder === 'asc' ? a.message.localeCompare(b.message) : b.message.localeCompare(a.message)
+    );
+    setFilteredGeneralData(sortedData);
+  };
   return (
     <View style={{ paddingHorizontal: 10 }}>
       <TextInput
         style={styles.input}
         placeholder="Tìm kiếm..."
+        value={searchTerm}
+        onChangeText={handleSearch}
       />
       <View style={styles.dropdownContainer}>
         <Dropdown
@@ -164,47 +300,17 @@ const Report = () => {
           onChange={handleFilterChange}
         />
       </View>
-      <FlatList
-        style={styles.FlatList}
-        data={reportData}
-        renderItem={renderItem}
-        keyExtractor={item => item.id}
-      />
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={closeModal}
-      >
-        <View
-          style={styles.centeredView}
-          activeOpacity={1}>
-          <View style={styles.modalView}>
-            {selectedItem && (
-              <View>
-                <Text style={styles.titleModal}>Thông tin chi tiết</Text>
-                <View style={styles.modalCont}>
-                  <View style={styles.row}>
-                    <Icon style={styles.label} name='person-circle-outline' size={25}></Icon><Text>  </Text><Text style={styles.nameuser}>{selectedItem.name}</Text>
-                  </View>
-                  <View style={styles.row}>
-                    <Icon style={styles.label} name='time-outline' size={25}></Icon><Text>  </Text><Text style={styles.nameuser}>{selectedItem.time}</Text>
-                  </View>
-                  <View style={styles.containerLabel}>
-                    <Text style={styles.labelContent}>Nội dung</Text>
-                  </View>
-                  <View contentContainerStyle={styles.contentDetail}>
-                    <Text style={styles.mess}>{selectedItem.message}</Text>
-                  </View>
-                </View>
-                <TouchableOpacity style={styles.btnClose} onPress={closeModal}>
-                  <Text style={styles.back}>Quay lại</Text>
-                </TouchableOpacity>
-              </View>
-            )}
-          </View>
-        </View>
-      </Modal>
+      {filteredGeneralData.length > 0 ? (
+        <FlatList
+          style={styles.FlatList}
+          data={filteredGeneralData}
+          renderItem={renderItem}
+          keyExtractor={item => item.id}
+        />
+      ) : (
+        <Text style={styles.noDataText}>Không có dữ liệu</Text>
+      )
+      }
     </View>
   );
 };
@@ -324,16 +430,10 @@ const styles = StyleSheet.create({
   row: {
     marginTop: 10,
     flexDirection: 'row',
-    borderBottomWidth: 1,
-    borderBottomColor: 'gray',
   },
   label: {
     color: '#0D1282',
     fontWeight: 'bold',
-  },
-  scrollViewContent: {
-    paddingHorizontal: 20,
-    flexGrow: 1,
   },
   mess: {
     textAlign: 'justify',
@@ -341,28 +441,52 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
   contentDetail: {
-    marginTop: 20,
-    borderWidth: 1,
+    marginTop: 10,
     padding: 5,
-    borderColor: 'gray',
+    borderWidth: 1,
     borderRadius: 5,
   },
-
   messShort: {
     marginTop: 5,
+    width: '80%',
+    fontWeight: 'bold',
+    textAlign: 'justify'
+  },
+  havenotseen: {
+    marginTop: 5,
+    width: '80%',
+    textAlign: 'justify'
   },
   nameuser: {
     marginTop: 5,
+    fontWeight: 'bold',
+    color: '#00CC03',
+
   },
   containerLabel: {
     paddingTop: 10,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  labelContent:{
+  labelContent: {
     fontWeight: 'bold',
     color: '#0D1282'
-  }
+  },
+  btnrm: {
+    marginLeft: 10,
+    color: 'white',
+  },
+  timedetail: {
+    marginTop: 5,
+    color: 'gray',
+  },
+  noDataText: {
+    marginTop: 100,
+    color: '#0D1282',
+    fontSize: 20,
+    textAlign: 'center',
+    alignSelf: 'center',
+  },
 });
 
 export default Report;

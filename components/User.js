@@ -33,7 +33,7 @@ const User = () => {
     const fetchUserData = async () => {
       setIsLoading(true)
       const data = await getAllUser();
-      console.log(data)
+      // console.log(data)
 
       if (data.length > 0) {
         setUserList(data);
