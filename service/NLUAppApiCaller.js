@@ -1,10 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 
-//Login NLUApp Api
-//return user object or null if error 
 export async function LoginApi(username, password, name) {
-    const urlString = "http://103.9.159.203:8001/authenticate/login";
+    const urlString = "http://103.9.159.203:8001/authenticate/loginAdmin";
     const params = `{"username":"${username}","password":"${password}", "name":"${name}"}`;
 
     const response = await fetch(urlString, {
@@ -14,13 +12,10 @@ export async function LoginApi(username, password, name) {
         },
         body: params,
     });
-    
-
     if (response.ok) {
         const responseData = await response.json();
-        console.log(responseData)
         const data = responseData.data;
-        if (!data) return null;
+        if (responseData.code != 200) return null;
         const token = responseData.data.access_token;
         AsyncStorage.setItem("tokenApp", token);
         return responseData.data;
@@ -44,6 +39,7 @@ export async function getUser(id) {
 
     if (response.ok) {
         const responseData = await response.json();
+        if (responseData.code != 200) return null;
         const id = responseData.user_name;
         const name = responseData.name;
         const isNonLocked = responseData.non_locked;
@@ -97,6 +93,7 @@ export async function lockUser(id) {
 
     if (response.ok) {
         const responseData = await response.json();
+        if (responseData.code != 200) return null;
         // console.log(response.message)
         return responseData.message
     }
@@ -119,6 +116,29 @@ export async function unlockUser(id) {
 
     if (response.ok) {
         const responseData = await response.json();
+        if (responseData.code != 200) return null;
+        return responseData.message
+    }
+    return null;
+}
+
+export async function deleteUser(id) {
+    const urlString = "http://103.9.159.203:8001/user/delete/"+id;
+    const token = await AsyncStorage.getItem('tokenApp');
+    const params = "";
+
+    const response = await fetch(urlString, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + token,
+        },
+        body: params,
+    });
+
+    if (response.ok) {
+        const responseData = await response.json();
+        if (responseData.code != 200) return null;
         return responseData.message
     }
     return null;
@@ -142,6 +162,7 @@ export async function addVip(id, days) {
 
     if (response.ok) {
         const responseData = await response.json();
+        if (responseData.code != 200) return null;
         return responseData.message
     }
     return null;
@@ -166,10 +187,12 @@ export async function changePassword(old_pass, new_pass, re_new_pass) {
 
     if (response.ok) {
         const responseData = await response.json();
+        if (responseData.code != 200) return null;
         return responseData.message
     }
     return null;
 }
+
 export async function addManager(username, password, name) {
     const urlString = "http://103.9.159.203:8001/user/addManager";
     const token = await AsyncStorage.getItem('tokenApp');
@@ -189,6 +212,7 @@ export async function addManager(username, password, name) {
 
     if (response.ok) {
         const responseData = await response.json();
+        if (responseData.code != 200) return null;
         return responseData.message
     }
     return null;
@@ -209,6 +233,7 @@ export async function getAllReport() {
 
     if (response.ok) {
         const responseData = await response.json();
+        if (responseData.code != 200) return null;
         return responseData.data
     }
     return null;
@@ -229,6 +254,7 @@ export async function readReport(id) {
 
     if (response.ok) {
         const responseData = await response.json();
+        if (responseData.code != 200) return null;
         return responseData.message
     }
     return null;
@@ -248,6 +274,7 @@ export async function grantStarReport(id) {
 
     if (response.ok) {
         const responseData = await response.json();
+        if (responseData.code != 200) return null;
         return responseData.message
     }
     return null;
@@ -267,6 +294,7 @@ export async function rmStarReport(id) {
 
     if (response.ok) {
         const responseData = await response.json();
+        if (responseData.code != 200) return null;
         return responseData.message
     }
     return null;
@@ -286,6 +314,7 @@ export async function deleteReport(id) {
 
     if (response.ok) {
         const responseData = await response.json();
+        if (responseData.code != 200) return null;
         return responseData.message
     }
     return null;
