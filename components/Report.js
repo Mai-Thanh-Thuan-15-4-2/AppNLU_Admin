@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Alert, Text, View, FlatList, StyleSheet, TextInput, PanResponder, TouchableOpacity, Modal, Animated, Dimensions } from 'react-native';
+import { SafeAreaView, Alert, Text, View, FlatList, StyleSheet, TextInput, PanResponder, TouchableOpacity, ActivityIndicator, Animated, Dimensions } from 'react-native';
 import { getAllReport, readReport, getAllUser, grantStarReport, rmStarReport, deleteReport } from '../service/NLUAppApiCaller';
 import { Dropdown } from 'react-native-element-dropdown';
 import Icon from 'react-native-vector-icons/Ionicons';
+import { loadPage } from '../BaseStyle/Style';
+import Toast from 'react-native-toast-message';
 
 
 function formatDateTime(dateTimeString) {
@@ -31,18 +33,25 @@ const Report = () => {
   const [filteredGeneralData, setFilteredGeneralData] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortOrder, setSortOrder] = useState('asc');
-
-
+  const [isLoading, setIsLoading] = useState(false);
 
   const createPanResponder = (index) => {
     return PanResponder.create({
       onMoveShouldSetPanResponderCapture: (_, gestureState) => {
-        return Math.abs(gestureState.dx) > Math.abs(gestureState.dy) && gestureState.dx < -5;
+        return Math.abs(gestureState.dx) > Math.abs(gestureState.dy) && Math.abs(gestureState.dx) > 5;
       },
-      onPanResponderMove: Animated.event([null, { dx: panValues[index]?.x || 0 }], { useNativeDriver: false }),
-      onPanResponderRelease: async (e, gesture) => {
-        if (gesture.dx < -50) {
-          setItemToDelete(index);
+      onPanResponderMove: (_, gestureState) => {
+        panValues[index].setValue({ x: gestureState.dx, y: 0 });
+      },
+      onPanResponderRelease: async (_, gesture) => {
+        if (gesture.dx < -200 || gesture.dx > 200) {
+          if (gesture.dx < -200) {
+            handleDeleteConfirmation(index);
+          }
+          Animated.spring(panValues[index], {
+            toValue: { x: 0, y: 0 },
+            useNativeDriver: false
+          }).start();
         } else {
           Animated.spring(panValues[index], {
             toValue: { x: 0, y: 0 },
@@ -52,57 +61,80 @@ const Report = () => {
       }
     });
   };
-
-  const handleDeleteConfirmation = async () => {
-    if (itemToDelete !== null) {
-      Alert.alert(
-        'Xác nhận xóa',
-        'Bạn có chắc chắn muốn xóa báo cáo này?',
-        [
-          {
-            text: 'Hủy',
-            style: 'cancel',
-            onPress: () => {
-              setItemToDelete(null);
-            },
+  const handleDeleteConfirmation = async (index) => {
+    Alert.alert(
+      'Xác nhận xóa',
+      'Bạn có chắc chắn muốn xóa báo cáo này?',
+      [
+        {
+          text: 'Hủy',
+          style: 'cancel',
+          onPress: () => {},
+        },
+        {
+          text: 'Xóa',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const idToDelete = general[index].id;
+              const message = await deleteReport(idToDelete);
+              const updateReportData = [...reportData];
+              const updatedGeneral = [...general];
+              const updatefilterData = [...general];
+              updateReportData.splice(index, 1);
+              updatedGeneral.splice(index, 1);
+              updatefilterData.splice(index, 1);
+              setFilteredGeneralData(updatefilterData);
+              setGeneral(updatedGeneral);
+              setReportData(updateReportData);
+              panValues.splice(index, 1);
+            } catch (error) {
+              Toast.show({
+                type: 'error',
+                text1: 'Có lỗi xảy ra!',
+                text2: 'Không thể lấy dữ liệu',
+                visibilityTime: 2000,
+                autoHide: true,
+              });
+            }
           },
-          {
-            text: 'Xóa',
-            style: 'destructive',
-            onPress: async () => {
-              try {
-                const idToDelete = general[itemToDelete].id;
-                const message = await deleteReport(idToDelete);
-                const updatedGeneral = [...general];
-                updatedGeneral.splice(itemToDelete, 1);
-                setGeneral(updatedGeneral);
-              } catch (error) {
-                console.error('Error deleting report:', error);
-              }
-              setItemToDelete(null);
-            },
-          },
-        ],
-        { cancelable: false }
-      );
-    }
+        },
+      ],
+      { cancelable: false }
+    );
   };
+
   useEffect(() => {
     const fetchUsers = async () => {
       try {
         const fetchedUsers = await getAllUser();
         setUsers(fetchedUsers);
       } catch (error) {
-        console.error('Error fetching users:', error);
+        Toast.show({
+          type: 'error',
+          text1: 'Có lỗi xảy ra!',
+          text2: 'Không thể lấy dữ liệu',
+          visibilityTime: 2000,
+          autoHide: true,
+        });
       }
     };
 
     const fetchReports = async () => {
       try {
+        setIsLoading(true);
         const fetchedReports = await getAllReport();
         setReportData(fetchedReports);
       } catch (error) {
-        console.error('Error fetching reports:', error);
+        Toast.show({
+          type: 'error',
+          text1: 'Có lỗi xảy ra!',
+          text2: 'Không thể lấy dữ liệu',
+          visibilityTime: 2000,
+          autoHide: true,
+        });
+      } finally {
+        setIsLoading(false);
       }
     };
     fetchUsers();
@@ -125,6 +157,10 @@ const Report = () => {
             return combinedData.filter(item => item.star === true);
           case '3':
             return combinedData.filter(item => item.star === false);
+          case '4':
+            return combinedData.filter(item => item.read === false);
+          case '5':
+            return combinedData.filter(item => item.read === true);
           default:
             return combinedData;
         }
@@ -148,7 +184,6 @@ const Report = () => {
     }
   }, [users, reportData, filterBy, sortBy]);
 
-
   const dataSort = [
     { label: 'Mặc định', value: '1' },
     { label: 'Mới nhất', value: '2' },
@@ -158,6 +193,8 @@ const Report = () => {
     { label: 'Mặc định', value: '1' },
     { label: 'Đánh dấu', value: '2' },
     { label: 'Không đánh dấu', value: '3' },
+    { label: 'Chưa xem', value: '4' },
+    { label: 'Đã xem', value: '5' },
   ];
   const handleSortChange = (value) => {
     setSortBy(value);
@@ -179,81 +216,91 @@ const Report = () => {
         await grantStarReport(itemId);
       }
     } catch (error) {
-      console.error('Error:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Có lỗi xảy ra!',
+        text2: 'Không thể lấy dữ liệu',
+        visibilityTime: 2000,
+        autoHide: true,
+      });
     }
   };
-  const toggleContent = async (itemId) => {
-    const message = await readReport(itemId);
-    if (message === 'success') {
-      const updatedGeneral = general.map(item => {
-        if (item.id === itemId) {
-          return { ...item, read: true };
-        }
-        return item;
+  const toggleContent = async (itemId, currentStatus) => {
+    try {
+      if (!currentStatus) {
+        setReportData(prevData =>
+          prevData.map(item =>
+            item.id === itemId ? { ...item, read: true } : item
+          )
+        );
+        await readReport(itemId);
+      }
+      setShowFullContentMap(prevState => ({
+        ...prevState,
+        [itemId]: !prevState[itemId],
+      }));
+    } catch (error) {
+      Toast.show({
+        type: 'error',
+        text1: 'Có lỗi xảy ra!',
+        text2: 'Không thể lấy dữ liệu',
+        visibilityTime: 2000,
+        autoHide: true,
       });
-      setGeneral(updatedGeneral);
-    }  
-    setShowFullContentMap(prevState => ({
-      ...prevState,
-      [itemId]: !prevState[itemId],
-    }));
+    }
   };
-  
 
-  useEffect(() => {
-    setFilteredGeneralData(general);
-    console.log(filteredGeneralData);
-  }, [general]);
-  
-  
   const truncateText = (text, itemId) => {
     if (!showFullContentMap[itemId]) {
       if (text.length > 25) return text.slice(0, 25) + '...';
     }
     return text;
   };
+
   const renderItem = ({ item, index }) => {
     if (!panValues[index]) {
       panValues[index] = new Animated.ValueXY();
     }
     const { width: screenWidth } = Dimensions.get('window');
     return (
-      <Animated.View
-        style={{
-          transform: [{ translateX: panValues[index].x }],
-        }}
-        {...createPanResponder(index).panHandlers}
-      >
-        <View style={{ flexDirection: 'row' }}>
-          <TouchableOpacity style={{ width: screenWidth - 35, marginRight: 5 }} onPress={() => {
-            toggleContent(item.id);
-          }}>
-            <View style={styles.item}>
-              <View style={styles.headReport}>
-                <Text style={styles.name}>{item.name ? item.name : "Kẻ ẩn danh"}</Text>
-                <Text style={styles.time}>{formatDateTime(item.createDate)}</Text>
-              </View>
-              <View style={styles.footReport}>
-                <Text style={item.read ?  styles.havenotseen : styles.messShort}>
-                  {truncateText(item.message, item.id)}
-                </Text>
-                <View style={styles.statusContainer}>
-                  <TouchableOpacity onPress={() => toggleStatus(item.id, item.star)}>
-                    <Icon
-                      name={item.star === true ? 'star' : 'star-outline'}
-                      size={22}
-                      color={item.star === true ? 'gold' : 'gray'}
-                    />
-                  </TouchableOpacity>
+      <SafeAreaView style={{ flex: 1, marginTop: 5 }}>
+        <Animated.View
+          style={{
+            transform: [{ translateX: panValues[index].x }],
+          }}
+          {...createPanResponder(index).panHandlers}
+        >
+          <View style={{ flexDirection: 'row' }}>
+            <TouchableOpacity style={{ width: screenWidth - 30, marginRight: 5 }} onPress={() => {
+              toggleContent(item.id, item.read);
+            }}>
+              <View style={styles.item}>
+                <View style={styles.headReport}>
+                  <Text style={styles.name}>{item.name ? item.name : "Admin"}</Text>
+                  <Text style={styles.time}>{formatDateTime(item.createDate)}</Text>
+                </View>
+                <View style={styles.footReport}>
+                  <Text style={item.read ? styles.havenotseen : styles.messShort}>
+                    {truncateText(item.message, item.id)}
+                  </Text>
+                  <View style={styles.statusContainer}>
+                    <TouchableOpacity onPress={() => toggleStatus(item.id, item.star)}>
+                      <Icon
+                        name={item.star === true ? 'star' : 'star-outline'}
+                        size={22}
+                        color={item.star === true ? 'gold' : 'gray'}
+                      />
+                    </TouchableOpacity>
+                  </View>
                 </View>
               </View>
-            </View>
-          </TouchableOpacity>
-          <TouchableOpacity style={{ backgroundColor: 'red', width: screenWidth * 0.5, marginTop: 5, justifyContent: 'center', height: '92%' }} onPress={() => handleDeleteConfirmation()}>
-            <Icon style={styles.btnrm} name={'trash-outline'} size={22} />
-          </TouchableOpacity>
-        </View>
-      </Animated.View>
+            </TouchableOpacity>
+            <TouchableOpacity style={{ backgroundColor: 'red', width: screenWidth * 0.5, marginTop: 5, justifyContent: 'center', height: '92%' }} onPress={() => handleDeleteConfirmation(index)}>
+              <Icon style={styles.btnrm} name={'trash-outline'} size={22} />
+            </TouchableOpacity>
+          </View>
+        </Animated.View>
+      </SafeAreaView>
     );
   };
   const handleSearch = (text) => {
@@ -264,14 +311,42 @@ const Report = () => {
     );
     setFilteredGeneralData(sortedData);
   };
+  const reloadPage = async () => {
+    try {
+      setIsLoading(true);
+      const fetchedReports = await getAllReport();
+      setReportData(fetchedReports);
+      setFilteredGeneralData(fetchedReports);
+      setGeneral(fetchedReports);
+    } catch (error) {
+      Toast.show({
+        type: 'error',
+        text1: 'Có lỗi xảy ra!',
+        text2: 'Không thể cập nhật dữ liệu',
+        visibilityTime: 2000,
+        autoHide: true,
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <View style={{ paddingHorizontal: 10 }}>
-      <TextInput
-        style={styles.input}
-        placeholder="Tìm kiếm..."
-        value={searchTerm}
-        onChangeText={handleSearch}
-      />
+      <View style={{ flexDirection: 'row' }}>
+        <TextInput
+          style={styles.input}
+          placeholder="Tìm kiếm..."
+          value={searchTerm}
+          onChangeText={handleSearch}
+        />
+        <TouchableOpacity
+          style={styles.refreshButton}
+          onPress={reloadPage}
+        >
+          <Icon name="ios-refresh" size={30} style={{ marginTop: 5 }} color="black" />
+        </TouchableOpacity>
+      </View>
       <View style={styles.dropdownContainer}>
         <Dropdown
           style={styles.dropdown}
@@ -292,9 +367,16 @@ const Report = () => {
           onChange={handleFilterChange}
         />
       </View>
+      {
+        isLoading ? (
+          <View style={loadPage.loadingContainer} >
+            <ActivityIndicator size="large" color="#2bc250" />
+          </View>) : (<></>)
+      }
       {filteredGeneralData.length > 0 ? (
+
         <FlatList
-          style={styles.FlatList}
+          style={[{ marginTop: 5, marginBottom: 120, marginLeft: 5 }]}
           data={filteredGeneralData}
           renderItem={renderItem}
           keyExtractor={item => item.id}
@@ -311,6 +393,7 @@ const styles = StyleSheet.create({
   input: {
     backgroundColor: 'white',
     marginTop: 5,
+    width: '90%',
     borderRadius: 5,
     height: 40,
     borderColor: 'black',
@@ -341,11 +424,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'lightgray',
     borderRadius: 5,
-    marginTop: 5,
     backgroundColor: 'white',
-  },
-  FlatList: {
-    margin: 5,
   },
   statusContainer: {
     right: 0,
@@ -447,6 +526,7 @@ const styles = StyleSheet.create({
   havenotseen: {
     marginTop: 5,
     width: '80%',
+    color: 'gray',
     textAlign: 'justify'
   },
   nameuser: {
@@ -478,6 +558,9 @@ const styles = StyleSheet.create({
     fontSize: 20,
     textAlign: 'center',
     alignSelf: 'center',
+  },
+  refreshButton: {
+    marginLeft: 5,
   },
 });
 
