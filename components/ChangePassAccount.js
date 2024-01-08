@@ -93,7 +93,6 @@ const styles = StyleSheet.create({
     buttonAddAccount: {
         color: 'white',
          textAlign: 'center',
-        borderBlockColor: 'transparent',
     },
 });
 
