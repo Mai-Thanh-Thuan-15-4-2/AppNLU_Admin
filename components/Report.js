@@ -35,7 +35,7 @@ const Report = () => {
   const [sortOrder, setSortOrder] = useState('asc');
   const [isLoading, setIsLoading] = useState(false);
 
-  const createPanResponder = (id) => {
+  const createPanResponder = (index) => {
     return PanResponder.create({
       onMoveShouldSetPanResponderCapture: (_, gestureState) => {
         return Math.abs(gestureState.dx) > Math.abs(gestureState.dy) && Math.abs(gestureState.dx) > 5;
@@ -46,7 +46,8 @@ const Report = () => {
       onPanResponderRelease: async (_, gesture) => {
         if (gesture.dx < -200 || gesture.dx > 200) {
           if (gesture.dx < -200) {
-            handleDeleteConfirmation(index);
+            const idToDelete = filteredGeneralData[index].id;
+            handleDeleteConfirmation(idToDelete);
           }
           Animated.spring(panValues[index], {
             toValue: { x: 0, y: 0 },
@@ -61,7 +62,7 @@ const Report = () => {
       }
     });
   };
-  const handleDeleteConfirmation = async (index) => {
+  const handleDeleteConfirmation = async (idToDelete) => {
     Alert.alert(
       'Xác nhận xóa',
       'Bạn có chắc chắn muốn xóa báo cáo này?',
@@ -76,18 +77,17 @@ const Report = () => {
           style: 'destructive',
           onPress: async () => {
             try {
-              const idToDelete = general[index].id;
               const message = await deleteReport(idToDelete);
-              const updateReportData = [...reportData];
-              const updatedGeneral = [...general];
-              const updatefilterData = [...general];
-              updateReportData.splice(index, 1);
-              updatedGeneral.splice(index, 1);
-              updatefilterData.splice(index, 1);
+              const updateReportData = reportData.filter(item => item.id !== idToDelete);
+              const updatedGeneral = general.filter(item => item.id !== idToDelete);
+              const updatefilterData = filteredGeneralData.filter(item => item.id !== idToDelete);
               setFilteredGeneralData(updatefilterData);
               setGeneral(updatedGeneral);
               setReportData(updateReportData);
-              panValues.splice(index, 1);
+              const indexToDelete = general.findIndex(item => item.id === idToDelete);
+              if (indexToDelete !== -1) {
+                panValues.splice(indexToDelete, 1);
+              }
             } catch (error) {
               Toast.show({
                 type: 'error',
@@ -103,6 +103,7 @@ const Report = () => {
       { cancelable: false }
     );
   };
+  
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -295,7 +296,7 @@ const Report = () => {
                 </View>
               </View>
             </TouchableOpacity>
-            <TouchableOpacity style={{ backgroundColor: 'red', width: screenWidth * 0.5, marginTop: 5, justifyContent: 'center', height: '92%' }} onPress={() => handleDeleteConfirmation(index)}>
+            <TouchableOpacity style={{ backgroundColor: 'red', width: screenWidth * 0.5, marginTop: 5, justifyContent: 'center', height: '92%' }} onPress={() => handleDeleteConfirmation(item.id)}>
               <Icon style={styles.btnrm} name={'trash-outline'} size={22} />
             </TouchableOpacity>
           </View>
@@ -366,9 +367,8 @@ const Report = () => {
           </View>) : (<></>)
       }
       {filteredGeneralData.length > 0 ? (
-
         <FlatList
-          style={[{ marginTop: 5, marginBottom: 120, marginLeft: 5 }]}
+          style={[{ marginTop: 5, marginBottom: 120, marginLeft: 5}]}
           data={filteredGeneralData}
           renderItem={renderItem}
           keyExtractor={item => item.id}
@@ -376,7 +376,17 @@ const Report = () => {
           refreshing={false}
         />
       ) : (
+        <View>
+        <FlatList
+          style={[{ marginTop: 5, marginBottom: 120, marginLeft: 5, minHeight: 150 }]}
+          data={filteredGeneralData}
+          renderItem={renderItem}
+          keyExtractor={item => item.id}
+          onRefresh={handleRefresh}
+          refreshing={false}
+        />
         <Text style={styles.noDataText}>Không có dữ liệu</Text>
+        </View>
       )
       }
     </View>
@@ -403,7 +413,7 @@ const styles = StyleSheet.create({
   dropdown: {
     backgroundColor: 'white',
     marginTop: 5,
-    width: '45%',
+    width: '49%',
     height: 40,
     borderWidth: 1,
     borderColor: 'black',
@@ -546,7 +556,6 @@ const styles = StyleSheet.create({
     color: 'gray',
   },
   noDataText: {
-    marginTop: 100,
     color: '#0D1282',
     fontSize: 20,
     textAlign: 'center',
