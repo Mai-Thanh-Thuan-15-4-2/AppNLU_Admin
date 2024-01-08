@@ -26,8 +26,6 @@ const Report = () => {
   const [reportData, setReportData] = useState([]);
   const [users, setUsers] = useState([]);
   const [general, setGeneral] = useState([]);
-  const pan = useRef(new Animated.ValueXY()).current;
-  const [itemToDelete, setItemToDelete] = useState(null);
   const panValues = useRef([]).current;
   const [showFullContentMap, setShowFullContentMap] = useState({});
   const [filteredGeneralData, setFilteredGeneralData] = useState([]);
@@ -328,9 +326,6 @@ const Report = () => {
       });
     }
   };
-  const handleRefresh = () => {
-    reloadPage();
-  };
   return (
     <View style={{ paddingHorizontal: 10 }}>
         <TextInput
@@ -371,7 +366,7 @@ const Report = () => {
           data={filteredGeneralData}
           renderItem={renderItem}
           keyExtractor={item => item.id}
-          onRefresh={handleRefresh}
+          onRefresh={reloadPage}
           refreshing={false}
         />
       ) : (
@@ -381,7 +376,7 @@ const Report = () => {
           data={filteredGeneralData}
           renderItem={renderItem}
           keyExtractor={item => item.id}
-          onRefresh={handleRefresh}
+          onRefresh={reloadPage}
           refreshing={false}
         />
         <Text style={styles.noDataText}>Không có dữ liệu</Text>
