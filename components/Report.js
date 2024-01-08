@@ -331,6 +331,7 @@ const Report = () => {
         <TextInput
           style={styles.input}
           placeholder="Tìm kiếm..."
+          placeholderTextColor={"lightgray"}
           value={searchTerm}
           onChangeText={handleSearch}
         />

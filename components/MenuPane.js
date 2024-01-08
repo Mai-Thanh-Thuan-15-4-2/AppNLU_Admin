@@ -3,7 +3,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Icon from 'react-native-vector-icons/Ionicons';
 import User from './User';
 import Report from './Report';
-import Statistic from './Statistic';
+import About from './About';
 
 const Tab = createBottomTabNavigator();
 
@@ -24,7 +24,7 @@ const MenuPane = () => {
             iconName = focused ? 'people' : 'people-outline';
           } else if (route.name === 'Báo cáo') {
             iconName = focused ? 'bug' : 'bug-outline';
-          } else if (route.name === 'Thống kê') {
+          } else if (route.name === 'Tiện ích') {
             iconName = focused ? 'grid' : 'grid-outline';
           } 
 
@@ -34,7 +34,7 @@ const MenuPane = () => {
     >
       <Tab.Screen name="Người dùng" component={User}/>
       <Tab.Screen name="Báo cáo" component={Report}/>
-      <Tab.Screen name="Thống kê" component={Statistic}/>
+      <Tab.Screen name="Tiện ích" component={About}/>
       
     </Tab.Navigator>
   );
