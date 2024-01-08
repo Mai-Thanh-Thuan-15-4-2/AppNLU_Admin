@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { SafeAreaView, Alert, Text, View, FlatList, StyleSheet, TextInput, PanResponder, TouchableOpacity, ActivityIndicator, Animated, Dimensions } from 'react-native';
+import { SafeAreaView, Alert, Text, View, FlatList, StyleSheet, TextInput, PanResponder, TouchableOpacity, ActivityIndicator, Animated, Dimensions, ScrollView } from 'react-native';
 import { getAllReport, readReport, getAllUser, grantStarReport, rmStarReport, deleteReport } from '../service/NLUAppApiCaller';
 import { Dropdown } from 'react-native-element-dropdown';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -35,7 +35,7 @@ const Report = () => {
   const [sortOrder, setSortOrder] = useState('asc');
   const [isLoading, setIsLoading] = useState(false);
 
-  const createPanResponder = (index) => {
+  const createPanResponder = (id) => {
     return PanResponder.create({
       onMoveShouldSetPanResponderCapture: (_, gestureState) => {
         return Math.abs(gestureState.dx) > Math.abs(gestureState.dy) && Math.abs(gestureState.dx) > 5;
@@ -69,7 +69,7 @@ const Report = () => {
         {
           text: 'Hủy',
           style: 'cancel',
-          onPress: () => {},
+          onPress: () => { },
         },
         {
           text: 'Xóa',
@@ -313,7 +313,6 @@ const Report = () => {
   };
   const reloadPage = async () => {
     try {
-      setIsLoading(true);
       const fetchedReports = await getAllReport();
       setReportData(fetchedReports);
       setFilteredGeneralData(fetchedReports);
@@ -326,14 +325,13 @@ const Report = () => {
         visibilityTime: 2000,
         autoHide: true,
       });
-    } finally {
-      setIsLoading(false);
     }
   };
-
+  const handleRefresh = () => {
+    reloadPage();
+  };
   return (
     <View style={{ paddingHorizontal: 10 }}>
-      <View style={{ flexDirection: 'row' }}>
         <TextInput
           style={styles.input}
           placeholder="Tìm kiếm..."
@@ -341,13 +339,6 @@ const Report = () => {
           value={searchTerm}
           onChangeText={handleSearch}
         />
-        <TouchableOpacity
-          style={styles.refreshButton}
-          onPress={reloadPage}
-        >
-          <Icon name="ios-refresh" size={30} style={{ marginTop: 5 }} color="black" />
-        </TouchableOpacity>
-      </View>
       <View style={styles.dropdownContainer}>
         <Dropdown
           style={styles.dropdown}
@@ -381,6 +372,8 @@ const Report = () => {
           data={filteredGeneralData}
           renderItem={renderItem}
           keyExtractor={item => item.id}
+          onRefresh={handleRefresh}
+          refreshing={false}
         />
       ) : (
         <Text style={styles.noDataText}>Không có dữ liệu</Text>
@@ -394,7 +387,6 @@ const styles = StyleSheet.create({
   input: {
     backgroundColor: 'white',
     marginTop: 5,
-    width: '90%',
     borderRadius: 5,
     height: 40,
     borderColor: 'black',
