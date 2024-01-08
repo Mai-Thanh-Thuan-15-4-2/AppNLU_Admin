@@ -119,7 +119,6 @@ const styles = StyleSheet.create({
     modalAddBtn: { backgroundColor: colors.primary, padding: 15, margin: 14, borderRadius: 5, width: 100, },
     buttonAddAccount: {
         color: 'white', textAlign: 'center',
-        borderBlockColor: 'transparent',
     },
 
 });
