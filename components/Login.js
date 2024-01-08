@@ -75,6 +75,7 @@ export default function Login({ navigation }) {
                 autoHide: true,
             });
             navigation.navigate('MenuPane');
+            console.log(user)
 
         } else {
             Toast.show({

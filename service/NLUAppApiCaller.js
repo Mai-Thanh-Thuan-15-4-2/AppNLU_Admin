@@ -18,12 +18,15 @@ export async function LoginApi(username, password, name) {
         if (responseData.code != 200) return null;
         const token = responseData.data.access_token;
         AsyncStorage.setItem("tokenApp", token);
+        AsyncStorage.setItem("username", responseData.data.user_name);
         return responseData.data;
     }
     return null;
 }
 
 export async function getUser(id) {
+    const username = await AsyncStorage.getItem('username');
+    if (!id) id = username;
     const urlString = "http://103.9.159.203:8001/user/info/"+id;
     const token = await AsyncStorage.getItem('tokenApp');
     const params = "";

@@ -2,37 +2,37 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, ActivityIndicator, RefreshControl } from 'react-native';
 import Modal from 'react-native-modal';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { StringToDate, getAllUser, lockUser, unlockUser, addVip } from '../service/NLUAppApiCaller';
+import { StringToDate, getAllUser, lockUser, unlockUser, addVip, deleteUser } from '../service/NLUAppApiCaller';
 import { Dropdown } from 'react-native-element-dropdown';
 import { colors, loadPage } from '../BaseStyle/Style';
 import Icon5 from 'react-native-vector-icons/FontAwesome5';
 import Toast from 'react-native-toast-message';
 
-
+var listUserFirst = [];
 const User = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortOrder, setSortOrder] = useState('asc');
+  const [userList, setUserList] = useState([]);
+  // const [listUserFirst, setListUserFirst] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [isModalVisible, setModalVisible] = useState(false);
-  const [userList, setUserList] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [listOption, setListOption] = useState([]);
   const [selectedIdOption, setSelectedIdOption] = useState(0);
   const [isUserLocked, setIsUserLocked] = useState(null);
-  const [listUserFirst, setListUserFirst] = useState([]);
   const [isVip, setIsVip] = useState(null);
   const [vipDays, setVipDays] = useState('');
-
+  const [refreshing, setRefreshing] = useState(false);
 
 
   useEffect(() => {
     const fetchUserData = async () => {
       setIsLoading(true)
       const data = await getAllUser();
-
-      if (data.length > 0) {
+      if (data != null) {
         setUserList(data);
-        setListUserFirst(data);
+        listUserFirst = [...data];
+        // console.log(listUserFirst)
       } else {
         Toast.show({
           type: 'error',
@@ -65,7 +65,7 @@ const User = () => {
     }));
     setListOption(formattedListOption)
   }, []);
-
+  // console.log(listUserFirst)
 
   const toggleModal = () => {
     setModalVisible(!isModalVisible);
@@ -73,7 +73,7 @@ const User = () => {
 
   const openOptionsModal = (user) => {
     setSelectedUser(user);
-    setIsUserLocked(user.non_locked);
+    setIsUserLocked(user.nonLocked);
     setIsVip(user.vip);
     toggleModal();
   };
@@ -81,6 +81,18 @@ const User = () => {
   const closeOptionsModal = () => {
     setSelectedUser(null);
     toggleModal();
+  };
+
+
+  const onRefresh = async () => {
+    const data = await getAllUser();
+    setRefreshing(true);
+    if (data) {
+      setUserList(data);
+      listUserFirst = [...data];
+      handleOptionChange(selectedIdOption);
+    }
+    setRefreshing(false);
   };
 
   const filteredUsers = userList.filter(user => user.user_name.includes(searchTerm.toLowerCase()));
@@ -99,7 +111,7 @@ const User = () => {
         addVipAccount(selectedUser.user_name, selectedUser.vip, vipDays);
         break;
       case 'Xóa tài khoản':
-        deleteUser(selectedUser);
+        deleteAccount(selectedUser.user_name);
         break;
       default:
         break;
@@ -110,7 +122,7 @@ const User = () => {
     try {
       setUserList(prevData =>
         prevData.map(user =>
-          user.user_name === userId ? { ...user, non_locked: !currentStatus } : user
+          user.user_name === userId ? { ...user, nonLocked: !currentStatus } : user
         )
       );
       if (currentStatus) {
@@ -122,17 +134,16 @@ const User = () => {
       console.error('Error:', error);
     }
   };
+  // lọc
   const filterUsers = async (role) => {
-    console.log(listUserFirst)
-    const filteredUsers = listUserFirst.filter(user => user.role === role);
+    const filteredUsers = [...listUserFirst].filter(user => user.role === role);
     setUserList(filteredUsers);
   }
+  // thêm VIP
   const addVipAccount = async (userId, currentStatus, days) => {
-    console.log(userId)
-    console.log(days)
-    console.log(currentStatus)
+
     let expired_vip = addDaysToCurrentDate(parseInt(days));
-    console.log(expired_vip)
+    // console.log(expired_vip)
     if (days === '') {
       Toast.show({
         type: 'error',
@@ -165,20 +176,28 @@ const User = () => {
     const currentDate = new Date(); // Lấy ngày và giờ hiện tại
     const newDate = new Date(currentDate);
 
-    // Thêm số ngày vào ngày hiện tại
+
     newDate.setDate(currentDate.getDate() + days);
 
-    // Định dạng ngày mới theo yêu cầu
     const formattedDate = newDate.toISOString().split('T')[0] + ' ' + newDate.toTimeString().split(' ')[0];
 
     return formattedDate;
   }
+  //  xóa TK
+  const deleteAccount = async (userId) => {
+    try {
+      setUserList(prevData =>
+        prevData.filter(user =>
+          user.user_name !== userId)
+      );
+      await deleteUser(userId);
 
-  const deleteUser = (userId) => {
-    console.log("xóa")
+    } catch (error) {
+      console.error('Error:', error);
+    }
   };
 
-  const handleOptionChange = async (id) => {
+  const handleOptionChange = (id) => {
     switch (id) {
       case 0:
         setSelectedIdOption(id);
@@ -193,6 +212,8 @@ const User = () => {
         filterUsers('MANAGER');
         break;
       default:
+        // setSelectedIdOption(id);
+        setUserList(listUserFirst);
         break;
     }
     setIsLoading(false);
@@ -219,6 +240,7 @@ const User = () => {
     return formattedDateTime;
   }
 
+
   const renderItem = ({ item }) => {
     const isExpanded = (item.user_name === expandedItem);
 
@@ -236,7 +258,7 @@ const User = () => {
           </View>
 
           <View style={styles.circleContainer}>
-            {item.non_locked === true ? (
+            {item.nonLocked === true ? (
               <Text style={[styles.userItemText, styles.userItemTextNormal]}>{'Active'}</Text>
             ) : (
               <Text style={[styles.userItemText, styles.userItemTextBlock]}>{'Blocked'}</Text>
@@ -274,21 +296,7 @@ const User = () => {
     );
   };
 
-  const onRefresh = async () => {
-    const data = await getAllUser();
-    if (data.length > 0) {
-      setUserList(data);
-      setListUserFirst(data);
-    } else {
-      Toast.show({
-        type: 'error',
-        text1: 'Có lỗi xảy ra!',
-        text2: 'Không thể lấy dữ liệu từ trang ĐKMH',
-        visibilityTime: 2000,
-        autoHide: true,
-      });
-    }
-  };
+
 
   return (
     <View style={styles.container}>
@@ -322,12 +330,13 @@ const User = () => {
         renderItem={renderItem}
         keyExtractor={item => item.user_name}
         refreshControl={
-          <RefreshControl onRefresh={onRefresh} />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       />
 
       {/* Options Modal */}
-      <Modal isVisible={isModalVisible} onBackdropPress={closeOptionsModal}>
+      <Modal  isVisible={isModalVisible}
+        onBackdropPress={closeOptionsModal}>
         <View style={styles.modalContainer}>
           <TouchableOpacity onPress={() => handleOptionPress('Khóa tài khoản')} style={styles.modalOption}>
             <Icon name={!isUserLocked ? "lock-open" : "ios-lock-closed"} size={18} color="#333" style={styles.icon} />
@@ -345,7 +354,7 @@ const User = () => {
                   style={styles.input}
                   placeholder="Số ngày"
                   placeholderTextColor={'lightgray'}
-                  borderRadius={10}
+                  borderRadius={5}
                   keyboardType="numeric"
                   value={vipDays}
                   onChangeText={(text) => setVipDays(text.replace(/[^0-9]/g, ''))} // Chỉ cho phép nhập số
@@ -393,7 +402,7 @@ const styles = StyleSheet.create({
     padding: 10,
     width: '100%',
     borderRadius: 5,
-    
+
     backgroundColor: 'white',
   },
   dropdown: {
@@ -405,7 +414,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     justifyContent: 'center',
     alignItems: 'center',
-    
+    fontSize: 15,
     backgroundColor: 'white',
   },
   sortButton: {
@@ -417,7 +426,7 @@ const styles = StyleSheet.create({
     width: '49%',
     borderWidth: 1,
     borderColor: colors.black,
-    
+
     backgroundColor: 'white',
   },
   userListStyle: {
@@ -428,19 +437,19 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     padding: 10,
     width: '100%',
-    
+
     backgroundColor: 'white',
   },
   userItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    flex:1,
-    
+    flex: 1,
+
   },
   expandedInfo: {
     marginTop: 10,
     flexDirection: 'column',
-    
+
     justifyContent: 'space-between',
   },
   expandedItemText: {
@@ -477,7 +486,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#ccc',
   },
-  noneBorderBottom: { borderBlockColor: 'transparent'},
+  noneBorderBottom: { borderBlockColor: 'transparent' },
   icon: {
     marginRight: 10,
   },
@@ -492,7 +501,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     transform: [{ rotate: '-10deg' }],
   },
-  crown_white:{
+  crown_white: {
     color: 'transparent',
   },
   circleContainer: {
