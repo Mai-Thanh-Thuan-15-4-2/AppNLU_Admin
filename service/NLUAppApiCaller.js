@@ -42,14 +42,14 @@ export async function getUser(id) {
 
     if (response.ok) {
         const responseData = await response.json();
-        if (responseData.code != 200) return null;
         const id = responseData.user_name;
         const name = responseData.name;
         const isNonLocked = responseData.non_locked;
+        const role = responseData.role;
         const isVip = responseData.vip;
         const expiredVipDate = responseData.expired_vip_date;
         const token = responseData.access_token;
-        return {id: id, name: name, isNonLocked: isNonLocked, isVip: isVip, expiredVipDate: expiredVipDate, token: token};
+        return {id: id, name: name, isNonLocked: isNonLocked, role: role, isVip: isVip, expiredVipDate: expiredVipDate, token: token};
     }
     return null;
 }

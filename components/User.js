@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, ActivityIndicator, RefreshControl } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Alert, FlatList, StyleSheet, ActivityIndicator, RefreshControl } from 'react-native';
 import Modal from 'react-native-modal';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { StringToDate, getAllUser, lockUser, unlockUser, addVip, deleteUser } from '../service/NLUAppApiCaller';
@@ -7,6 +7,8 @@ import { Dropdown } from 'react-native-element-dropdown';
 import { colors, loadPage } from '../BaseStyle/Style';
 import Icon5 from 'react-native-vector-icons/FontAwesome5';
 import Toast from 'react-native-toast-message';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getUser } from '../service/NLUAppApiCaller';
 
 var listUserFirst = [];
 const User = () => {
@@ -24,6 +26,17 @@ const User = () => {
   const [vipDays, setVipDays] = useState('');
   const [refreshing, setRefreshing] = useState(false);
 
+  const [user, setUser] = useState({});
+
+  useEffect(() => {
+    const fetchProfileData = async () => {
+      const user = await getUser();
+      setUser(user);
+      console.log(user)
+    };
+
+    fetchProfileData();
+  }, [])
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -105,13 +118,47 @@ const User = () => {
   const handleOptionPress = (option) => {
     switch (option) {
       case 'Khóa tài khoản':
-        onLockAccount(selectedUser.user_name, isUserLocked);
+        Alert.alert(
+          'Xác nhận',
+         isUserLocked ? 'Bạn có chắc chắn muốn khóa tài khoản này?' : 'Bạn có chắc muốn mở khóa tài khoản này?',
+          [
+            {
+              text: 'Quay lại',
+              style: 'cancel',
+            },
+            {
+              text: 'OK',
+              onPress: () => {
+                onLockAccount(selectedUser.user_name, isUserLocked);
+              },
+            },
+          ],
+          { cancelable: false }
+        );
+       
         break;
       case 'Thêm VIP':
         addVipAccount(selectedUser.user_name, selectedUser.vip, vipDays);
         break;
       case 'Xóa tài khoản':
-        deleteAccount(selectedUser.user_name);
+        Alert.alert(
+          'Xác nhận',
+          'Bạn có chắc chắn muốn xóa tài khoản này?',
+          [
+            {
+              text: 'Quay lại',
+              style: 'cancel',
+            },
+            {
+              text: 'OK',
+              onPress: () => {
+                deleteAccount(selectedUser.user_name);
+              },
+            },
+          ],
+          { cancelable: false }
+        );
+       
         break;
       default:
         break;
@@ -185,6 +232,7 @@ const User = () => {
   }
   //  xóa TK
   const deleteAccount = async (userId) => {
+ 
     try {
       setUserList(prevData =>
         prevData.filter(user =>
@@ -323,19 +371,34 @@ const User = () => {
           onChange={(item) => handleOptionChange(item.value)}
         />
       </View>
+      {sortedUsers.length > 0 ? (
+        <FlatList
+          style={[{ marginTop: 20, marginBottom: 80 }]}
+          data={sortedUsers}
+          renderItem={renderItem}
+          keyExtractor={item => item.user_name}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+        />
+      ) : (
+        <View>
+          <FlatList
+            style={[{ marginTop: 5, marginBottom: 120, marginLeft: 5, minHeight: 150 }]}
+            data={sortedUsers}
+            renderItem={renderItem}
+            keyExtractor={item => item.user_name}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+            }
+          />
+          <Text style={styles.noDataText}>Không có dữ liệu</Text>
+        </View>
+      )}
 
-      <FlatList
-        style={[{ marginTop: 20, marginBottom: 80 }]}
-        data={sortedUsers}
-        renderItem={renderItem}
-        keyExtractor={item => item.user_name}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-      />
 
       {/* Options Modal */}
-      <Modal  isVisible={isModalVisible}
+      <Modal isVisible={isModalVisible}
         onBackdropPress={closeOptionsModal}>
         <View style={styles.modalContainer}>
           <TouchableOpacity onPress={() => handleOptionPress('Khóa tài khoản')} style={styles.modalOption}>
@@ -367,11 +430,13 @@ const User = () => {
           )}
 
 
+          {user.role === "ADMIN" ? (
+            <TouchableOpacity onPress={() => handleOptionPress('Xóa tài khoản')} style={[styles.modalOption, styles.noneBorderBottom]}>
+              <Icon name="ios-trash" size={18} color={colors.dangerous} style={styles.icon} />
+              <Text style={styles.optionText}>Xóa tài khoản</Text>
+            </TouchableOpacity>
+          ) : (<></>)}
 
-          <TouchableOpacity onPress={() => handleOptionPress('Xóa tài khoản')} style={[styles.modalOption, styles.noneBorderBottom]}>
-            <Icon name="ios-trash" size={18} color={colors.dangerous} style={styles.icon} />
-            <Text style={styles.optionText}>Xóa tài khoản</Text>
-          </TouchableOpacity>
         </View >
       </Modal >
       {
@@ -536,6 +601,11 @@ const styles = StyleSheet.create({
   },
   buttonTxt: {
     color: colors.white,
+  },
+  noDataText: {
+    color: colors.primary,
+    fontSize: 20,
+    textAlign: 'center',
   },
 
 });

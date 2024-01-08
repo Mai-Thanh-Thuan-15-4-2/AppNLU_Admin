@@ -1,12 +1,26 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { colors } from '../BaseStyle/Style';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getUser } from '../service/NLUAppApiCaller';
+
 
 const About = () => {
   const navigation = useNavigation();
+  const [user, setUser] = useState({}); 
+
+  useEffect(() => {
+    const fetchProfileData = async () => {
+      const user = await getUser();
+      setUser(user);
+      console.log(user)
+    };
+
+    fetchProfileData();
+  }, [])
+
 
   const handleViewProfile = () => {
     navigation.navigate('Đổi mật khẩu');
@@ -26,8 +40,8 @@ const About = () => {
 
   return (
     <View style={styles.container}>
-        {/* Item Cài đặt */}
-        <TouchableOpacity style={styles.item} onPress={handleSetting}>
+      {/* Item Cài đặt */}
+      <TouchableOpacity style={styles.item} onPress={handleSetting}>
         <Icon name="bar-chart-outline" style={styles.icon} />
         <Text style={styles.itemText}>Thống Kê</Text>
       </TouchableOpacity>
@@ -36,18 +50,22 @@ const About = () => {
         <Icon name="person" style={styles.icon} />
         <Text style={styles.itemText}>Đổi Mật Khẩu</Text>
       </TouchableOpacity>
-    
-        {/* Item thêm TK */}
-        <TouchableOpacity style={styles.item} onPress={handleReportBug}>
+
+      {user.role === "ADMIN" ? (
+      < TouchableOpacity style={styles.item} onPress={handleReportBug}>
         <Icon name="add" style={styles.icon} />
         <Text style={styles.itemText}>Thêm TK Manager</Text>
       </TouchableOpacity>
+      ): (<>
+  </>)
+}
+
       {/* Item Đăng xuất */}
       <TouchableOpacity style={styles.item} onPress={handleLogout}>
         <Icon name="log-out" style={styles.icon_logout} />
         <Text style={styles.itemText}>Đăng xuất</Text>
       </TouchableOpacity>
-    </View>
+    </View >
   );
 };
 
