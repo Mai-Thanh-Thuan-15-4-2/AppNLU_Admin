@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, ActivityIndicator } from 'react-native';
 import Modal from 'react-native-modal';
-import Icon from 'react-native-vector-icons/Ionicons';
-import { StringToDate, getAllUser, lockUser, unlockUser, addVip, addManager } from '../service/NLUAppApiCaller';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import { StringToDate, getAllUser, addManager } from '../service/NLUAppApiCaller';
 import { Dropdown } from 'react-native-element-dropdown';
 import { colors, loadPage } from '../BaseStyle/Style';
 import Toast from 'react-native-toast-message';
@@ -123,26 +123,36 @@ const Statistic = () => {
 
       {/* thêm một điều kiện là người dùng admin mới được thấy nút mở modal và modal */}
       <Modal
-        animationType="slide"
+        // animationType="slide"
         isVisible={isModalVisible}
         onBackdropPress={closeOptionsModal}
+       
       >
+         <KeyboardAwareScrollView
+          contentContainerStyle={{ flex: 1, justifyContent: 'center' }}
+          resetScrollToCoords={{ x: 0, y: 0 }}
+          scrollEnabled={false}
+        >
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
           <View style={{ backgroundColor: 'white', padding: 30, borderRadius: 10, alignItems: 'center' }}>
+            <Text style={{ fontSize: 18, fontWeight: 'bold' }}>Thêm tài khoản MANAGER</Text>
             <TextInput
               placeholder="Tên người dùng"
+              placeholderTextColor={"lightgray"}
               value={name}
               onChangeText={setName}
               style={styles.inputStyle}
             />
             <TextInput
               placeholder="Tên đăng nhập"
+              placeholderTextColor={"lightgray"}
               value={username}
               onChangeText={setUsername}
               style={styles.inputStyle}
             />
             <TextInput
               placeholder="Mật khẩu"
+              placeholderTextColor={"lightgray"}
               value={password}
               onChangeText={setPassword}
               secureTextEntry
@@ -150,16 +160,18 @@ const Statistic = () => {
             />
             <TextInput
               placeholder="Nhập lại mật khẩu"
+              placeholderTextColor={"lightgray"}
               value={confirmPassword}
               onChangeText={setConfirmPassword}
               secureTextEntry
               style={styles.inputStyle}
             />
-            <TouchableOpacity onPress={handleAddAccount} style={{ backgroundColor: colors.primary, padding: 10, borderRadius: 5, width: 150 }}>
-              <Text style={{ color: 'white', textAlign: 'center' }}>Thêm Tài Khoản</Text>
+            <TouchableOpacity onPress={handleAddAccount} style={{ backgroundColor: colors.primary, padding: 15, borderRadius: 5, width: 100 }}>
+              <Text style={{ color: 'white', textAlign: 'center' }}>Thêm</Text>
             </TouchableOpacity>
           </View>
         </View>
+        </KeyboardAwareScrollView>
       </Modal>
       {
         isLoading ? (
@@ -208,7 +220,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   inputStyle: {
-    marginBottom: 10, borderBottomWidth: 1, borderColor: '#ccc', width: 250,
+    paddingBottom: 10, borderBottomWidth: 1, borderColor: '#ccc', width: 250, marginVertical: 20,
   },
 });
 

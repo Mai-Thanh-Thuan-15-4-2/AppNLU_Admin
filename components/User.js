@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, ActivityIndicator, RefreshControl } from 'react-native';
 import Modal from 'react-native-modal';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { StringToDate, getAllUser, lockUser, unlockUser, addVip } from '../service/NLUAppApiCaller';
@@ -274,6 +274,21 @@ const User = () => {
     );
   };
 
+  const onRefresh = async () => {
+    const data = await getAllUser();
+    if (data.length > 0) {
+      setUserList(data);
+      setListUserFirst(data);
+    } else {
+      Toast.show({
+        type: 'error',
+        text1: 'Có lỗi xảy ra!',
+        text2: 'Không thể lấy dữ liệu từ trang ĐKMH',
+        visibilityTime: 2000,
+        autoHide: true,
+      });
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -306,6 +321,9 @@ const User = () => {
         data={sortedUsers}
         renderItem={renderItem}
         keyExtractor={item => item.user_name}
+        refreshControl={
+          <RefreshControl onRefresh={onRefresh} />
+        }
       />
 
       {/* Options Modal */}
@@ -342,7 +360,7 @@ const User = () => {
 
 
           <TouchableOpacity onPress={() => handleOptionPress('Xóa tài khoản')} style={[styles.modalOption, styles.noneBorderBottom]}>
-            <Icon name="ios-trash" size={18} color="red" style={styles.icon} />
+            <Icon name="ios-trash" size={18} color={colors.dangerous} style={styles.icon} />
             <Text style={styles.optionText}>Xóa tài khoản</Text>
           </TouchableOpacity>
         </View >
@@ -375,6 +393,8 @@ const styles = StyleSheet.create({
     padding: 10,
     width: '100%',
     borderRadius: 5,
+    
+    backgroundColor: 'white',
   },
   dropdown: {
     height: 40,
@@ -385,6 +405,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     justifyContent: 'center',
     alignItems: 'center',
+    
+    backgroundColor: 'white',
   },
   sortButton: {
     alignItems: 'center',
@@ -395,6 +417,8 @@ const styles = StyleSheet.create({
     width: '49%',
     borderWidth: 1,
     borderColor: colors.black,
+    
+    backgroundColor: 'white',
   },
   userListStyle: {
     flexDirection: 'column',
@@ -404,16 +428,19 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     padding: 10,
     width: '100%',
+    
+    backgroundColor: 'white',
   },
   userItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     flex:1,
+    
   },
   expandedInfo: {
     marginTop: 10,
     flexDirection: 'column',
-    // flexWrap: 'wrap',
+    
     justifyContent: 'space-between',
   },
   expandedItemText: {
