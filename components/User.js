@@ -138,7 +138,18 @@ const User = () => {
        
         break;
       case 'Thêm VIP':
-        addVipAccount(selectedUser.user_name, selectedUser.vip, vipDays);
+        if (vipDays === '') {
+          Toast.show({
+            type: 'error',
+            text1: 'Có lỗi xảy ra!',
+            text2: 'Bạn chưa điền số ngày VIP',
+            visibilityTime: 2000,
+            autoHide: true,
+          });
+        }else{
+
+          addVipAccount(selectedUser.user_name, selectedUser.vip, vipDays);
+        }
         break;
       case 'Xóa tài khoản':
         Alert.alert(
@@ -188,18 +199,8 @@ const User = () => {
   }
   // thêm VIP
   const addVipAccount = async (userId, currentStatus, days) => {
-
     let expired_vip = addDaysToCurrentDate(parseInt(days));
-    // console.log(expired_vip)
-    if (days === '') {
-      Toast.show({
-        type: 'error',
-        text1: 'Có lỗi xảy ra!',
-        text2: 'Bạn chưa điền số ngày VIP',
-        visibilityTime: 2000,
-        autoHide: true,
-      });
-    } else {
+
         setUserList(prevData =>
           prevData.map(user =>
             user.user_name === userId ? {
@@ -211,8 +212,7 @@ const User = () => {
         );
 
         await addVip(userId, days);
-  
-    }
+            setVipDays('')
 
   };
   function addDaysToCurrentDate(days) {
