@@ -212,9 +212,10 @@ const User = () => {
         );
 
         await addVip(userId, days);
+        setVipDays('');
 
       } catch (error) {
-        console.error('Error:', error);
+        // console.error('Error:', error);
       }
     }
 
