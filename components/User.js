@@ -200,7 +200,7 @@ const User = () => {
         autoHide: true,
       });
     } else {
-      try {
+     
         setUserList(prevData =>
           prevData.map(user =>
             user.user_name === userId ? {
@@ -213,10 +213,6 @@ const User = () => {
 
         await addVip(userId, days);
         setVipDays('');
-
-      } catch (error) {
-        // console.error('Error:', error);
-      }
     }
 
   };
