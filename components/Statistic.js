@@ -72,7 +72,7 @@ const Statistic = () => {
   return (
     <>
       <View style={styles.container}>
-        {/* Grid items */}
+        <Text style={{width: '100%', margin: 10, fontSize: 20, fontWeight: 'bold'}}>User</Text>
         <View style={[styles.gridItem, { backgroundColor: '#3498db' }]}>
           <Text style={styles.gridItemText}>Tài khoản bị khóa </Text>
           <Text style={[styles.gridItemText, { textAlign: 'right', fontSize: 20, fontWeight: 'bold' }]}>{accountStats.lockedAccounts}</Text>
@@ -89,9 +89,7 @@ const Statistic = () => {
           <Text style={styles.gridItemText}>Tổng số người dùng </Text>
           <Text style={[styles.gridItemText, { textAlign: 'right', fontSize: 20, fontWeight: 'bold' }]}>{accountStats.totalAccounts}</Text>
         </View>
-
-        <View style={{ height: 2, backgroundColor: '#03116e', width: '100%', marginBottom: 30, marginTop: 20 }} />
-
+        <Text style={{width: '100%', margin: 10, fontSize: 20, fontWeight: 'bold'}}>Report</Text>
         <View style={[styles.gridItem, { backgroundColor: '#3498db' }]}>
           <Text style={styles.gridItemText}>Báo cáo tuần này</Text>
           <Text style={[styles.gridItemText, { textAlign: 'right', fontSize: 20, fontWeight: 'bold' }]}>{reportStats.newReportsThisWeek}</Text>
